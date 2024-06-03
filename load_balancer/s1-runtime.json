@@ -7,12 +7,15 @@
       "table": "MyIngress.ecmp_group",
       "default_action": true,
       "action_name": "MyIngress.drop",
-      "action_params": { }
+      "action_params": {}
     },
     {
       "table": "MyIngress.ecmp_group",
       "match": {
-        "hdr.ipv4.dstAddr": ["10.0.0.1", 32]
+        "hdr.ipv4.dstAddr": [
+          "10.0.0.1",
+          32
+        ]
       },
       "action_name": "MyIngress.set_ecmp_select",
       "action_params": {
@@ -29,7 +32,7 @@
       "action_params": {
         "nhop_dmac": "00:00:00:00:01:02",
         "nhop_ipv4": "10.0.2.2",
-	"port" : 2
+        "port": 2
       }
     },
     {
@@ -41,7 +44,7 @@
       "action_params": {
         "nhop_dmac": "00:00:00:00:01:03",
         "nhop_ipv4": "10.0.3.3",
-	"port" : 3
+        "port": 3
       }
     },
     {
