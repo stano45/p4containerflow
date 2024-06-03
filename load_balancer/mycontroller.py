@@ -81,6 +81,16 @@ def updateEcmpNhopTable(p4info_helper, sw, ecmp_select, dmac, ipv4, port, update
         })
     sw.WriteTableEntry(table_entry, update_type=update_type)
     print(f"Updated the 'ecmp_nhop' table on {sw.name=} with {ecmp_select=}, {ipv4=}, {dmac=}, {port=}")
+    
+def deleteEcmpNhopTable(p4info_helper, sw, ecmp_select):
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="MyIngress.ecmp_nhop",
+        match_fields={
+            "meta.ecmp_select": ecmp_select
+        },
+        )
+    sw.WriteTableEntry(table_entry, update_type="DELETE")
+    print(f"Deleted a 'ecmp_nhop' table entry on {sw.name=} with {ecmp_select=}")
 
 def readTableRules(p4info_helper, sw):
     """
@@ -188,6 +198,23 @@ def update_hop():
 
     try:
         updateEcmpNhopTable(p4info_helper, s1, ecmp_select, dmac, ipv4, port, update_type="MODIFY")
+        return jsonify({'status': 'success'}), 200
+    except grpc.RpcError as e:
+        printGrpcError(e)
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/delete_hop', methods=['POST'])
+def delete_hop():
+    global p4info_helper, s1
+    data = request.get_json()
+
+    ecmp_select = data.get('ecmp_select')
+
+    if ecmp_select is None:
+        return jsonify({'error': 'Missing ecmp_select parameter'}), 400
+
+    try:
+        deleteEcmpNhopTable(p4info_helper, s1, ecmp_select)
         return jsonify({'status': 'success'}), 200
     except grpc.RpcError as e:
         printGrpcError(e)
