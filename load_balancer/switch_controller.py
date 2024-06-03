@@ -31,7 +31,7 @@ class SwitchController(object):
         print("Installed P4 Program using SetForwardingPipelineConfig on s1")
 
         self._writeTableEntriesS1()
-    
+
     def __del__(self):
         ShutdownAllSwitchConnections()
 
@@ -147,4 +147,6 @@ class SwitchController(object):
             match_fields={"meta.ecmp_select": ecmp_select},
         )
         self.sw.WriteTableEntry(table_entry, update_type="DELETE")
-        print(f"Deleted a 'ecmp_nhop' table entry on {self.sw.name=} with {ecmp_select=}")
+        print(
+            f"Deleted a 'ecmp_nhop' table entry on {self.sw.name=} with {ecmp_select=}"
+        )

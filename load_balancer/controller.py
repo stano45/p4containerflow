@@ -19,6 +19,7 @@ app = Flask(__name__)
 
 global switchController
 
+
 def main(p4info_file_path, bmv2_file_path):
     try:
         global switchController
@@ -31,6 +32,7 @@ def main(p4info_file_path, bmv2_file_path):
     # Run Flask app
     app.run(port=5000)
 
+
 def printGrpcError(e):
     print("gRPC Error:", e.details(), end=" ")
     status_code = e.code()
@@ -38,6 +40,7 @@ def printGrpcError(e):
     traceback = sys.exc_info()[2]
     if traceback:
         print("[%s:%d]" % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno))
+
 
 @app.route("/insert_hop", methods=["POST"])
 def insert_hop():
@@ -53,7 +56,7 @@ def insert_hop():
 
     try:
         switchController.upsertEcmpNhopEntry(
-             ecmp_select, dmac, ipv4, port, update_type="INSERT"
+            ecmp_select, dmac, ipv4, port, update_type="INSERT"
         )
         return jsonify({"status": "success"}), 200
     except grpc.RpcError as e:
