@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 
+from flask import Flask, request, jsonify
 import grpc
 
 # Import P4Runtime lib from parent utils dir
@@ -14,6 +15,13 @@ import p4runtime_lib.bmv2
 import p4runtime_lib.helper
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 
+app = Flask(__name__)
+
+# Global variables for switch and P4 info helper
+s1 = None
+p4info_helper = None
+
+
 def writeTableEntriesS1(p4info_helper, sw):
     # Group IP (for load balancing)
     table_entry = p4info_helper.buildTableEntry(
@@ -21,7 +29,7 @@ def writeTableEntriesS1(p4info_helper, sw):
         default_action=True,
         action_name="MyIngress.drop",
         action_params={})
-    sw.WriteTableEntry(table_entry)
+    sw.WriteTableEntry(table_entry, update_type="MODIFY")
     print("Installed ecmp_group drop rule on %s" % sw.name)
     
     table_entry = p4info_helper.buildTableEntry(
@@ -59,7 +67,7 @@ def updateSendFrameTable(p4info_helper, sw, egress_port, smac):
     sw.WriteTableEntry(table_entry)
     print(f"Updated the 'send_frame' table on {sw.name=} with {egress_port=}, {smac=}")
 
-def updateEcmpNhopTable(p4info_helper, sw, ecmp_select, dmac, ipv4, port):
+def updateEcmpNhopTable(p4info_helper, sw, ecmp_select, dmac, ipv4, port, update_type="INSERT"):
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyIngress.ecmp_nhop",
         match_fields={
@@ -71,7 +79,7 @@ def updateEcmpNhopTable(p4info_helper, sw, ecmp_select, dmac, ipv4, port):
             "nhop_ipv4": ipv4,
             "port": port
         })
-    sw.WriteTableEntry(table_entry)
+    sw.WriteTableEntry(table_entry, update_type=update_type)
     print(f"Updated the 'ecmp_nhop' table on {sw.name=} with {ecmp_select=}, {ipv4=}, {dmac=}, {port=}")
 
 def readTableRules(p4info_helper, sw):
@@ -85,8 +93,6 @@ def readTableRules(p4info_helper, sw):
     for response in sw.ReadTableEntries():
         for entity in response.entities:
             entry = entity.table_entry
-            # TODO For extra credit, you can use the p4info_helper to translate
-            #      the IDs in the entry to names
             table_name = p4info_helper.get_tables_name(entry.table_id)
             print('%s: ' % table_name, end=' ')
             for m in entry.match:
@@ -106,40 +112,86 @@ def printGrpcError(e):
     print("(%s)" % status_code.name, end=' ')
     traceback = sys.exc_info()[2]
     print("[%s:%d]" % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno))
+    
+def initialize_switches(p4info_helper, bmv2_file_path):
+    # Create a switch connection object for s1 and s2;
+    # this is backed by a P4Runtime gRPC connection.
+    # Also, dump all P4Runtime messages sent to switch to given txt files.
+    global s1
+    s1 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
+        name='s1',
+        address='127.0.0.1:50051',
+        device_id=0,
+        proto_dump_file='logs/s1-p4runtime-requests.txt')
+
+    # Send master arbitration update message to establish this controller as
+    # master (required by P4Runtime before performing any other write operation)
+    s1.MasterArbitrationUpdate()
+    # s2.MasterArbitrationUpdate()
+
+    # Install the P4 program on the switches
+    s1.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
+                                    bmv2_json_file_path=bmv2_file_path)
+    print("Installed P4 Program using SetForwardingPipelineConfig on s1")
+
+    writeTableEntriesS1(p4info_helper, sw=s1)
+    readTableRules(p4info_helper, s1)
 
 def main(p4info_file_path, bmv2_file_path):
-    # Instantiate a P4Runtime helper from the p4info file
+    global p4info_helper
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
     try:
-        # Create a switch connection object for s1 and s2;
-        # this is backed by a P4Runtime gRPC connection.
-        # Also, dump all P4Runtime messages sent to switch to given txt files.
-        s1 = p4runtime_lib.bmv2.Bmv2SwitchConnection(
-            name='s1',
-            address='127.0.0.1:50051',
-            device_id=0,
-            proto_dump_file='logs/s1-p4runtime-requests.txt')
-
-        # Send master arbitration update message to establish this controller as
-        # master (required by P4Runtime before performing any other write operation)
-        s1.MasterArbitrationUpdate()
-        # s2.MasterArbitrationUpdate()
-
-        # Install the P4 program on the switches
-        s1.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
-                                       bmv2_json_file_path=bmv2_file_path)
-        print("Installed P4 Program using SetForwardingPipelineConfig on s1")
-
-        writeTableEntriesS1(p4info_helper, sw=s1)
-        readTableRules(p4info_helper, s1)
-
+        initialize_switches(p4info_helper, bmv2_file_path)
     except KeyboardInterrupt:
-        print(" Shutting down.")
+        print("Shutting down.")
     except grpc.RpcError as e:
         printGrpcError(e)
+        
+    app.run(port=5000)
 
     ShutdownAllSwitchConnections()
+    
+    
+@app.route('/insert_hop', methods=['POST'])
+def insert_hop():
+    global p4info_helper, s1
+    data = request.get_json()
+
+    ecmp_select = data.get('ecmp_select')
+    dmac = data.get('dmac')
+    ipv4 = data.get('ipv4')
+    port = data.get('port')
+
+    if not all([ecmp_select, dmac, ipv4, port]):
+        return jsonify({'error': 'Missing parameters'}), 400
+
+    try:
+        updateEcmpNhopTable(p4info_helper, s1, ecmp_select, dmac, ipv4, port, update_type="INSERT")
+        return jsonify({'status': 'success'}), 200
+    except grpc.RpcError as e:
+        printGrpcError(e)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/update_hop', methods=['POST'])
+def update_hop():
+    global p4info_helper, s1
+    data = request.get_json()
+
+    ecmp_select = data.get('ecmp_select')
+    dmac = data.get('dmac')
+    ipv4 = data.get('ipv4')
+    port = data.get('port')
+
+    if not all([ecmp_select, dmac, ipv4, port]):
+        return jsonify({'error': 'Missing parameters'}), 400
+
+    try:
+        updateEcmpNhopTable(p4info_helper, s1, ecmp_select, dmac, ipv4, port, update_type="MODIFY")
+        return jsonify({'status': 'success'}), 200
+    except grpc.RpcError as e:
+        printGrpcError(e)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='P4Runtime Controller')
