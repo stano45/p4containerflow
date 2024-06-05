@@ -136,7 +136,7 @@ control MyIngress(inout headers hdr,
             drop;
             set_nhop;
         }
-        size = 2;
+        size = 4;
     }
     apply {
         if (hdr.ipv4.isValid() && hdr.ipv4.ttl > 0) {

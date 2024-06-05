@@ -195,7 +195,7 @@ def insertTableEntry(sw, flow, p4info_helper):
         action_params=action_params,
         priority=priority)
 
-    sw.WriteTableEntry(table_entry)
+    sw.WriteTableEntry(table_entry, update_type="MODIFY" if table_entry.is_default_action else "INSERT")
 
 
 def json_load_byteified(file_handle):
