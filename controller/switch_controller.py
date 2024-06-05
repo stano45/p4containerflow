@@ -4,7 +4,9 @@ import os
 import sys
 
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../utils/"))
+sys.path.append(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../utils/")
+)
 import p4runtime_lib.bmv2
 import p4runtime_lib.helper
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
@@ -12,12 +14,14 @@ from p4runtime_lib.switch import ShutdownAllSwitchConnections
 
 class SwitchController(object):
     def __init__(self, p4info_file_path, bmv2_file_path):
-        self.p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
+        self.p4info_helper = p4runtime_lib.helper.P4InfoHelper(
+            p4info_file_path
+        )
         self.sw = p4runtime_lib.bmv2.Bmv2SwitchConnection(
             name="s1",
             address="127.0.0.1:50051",
             device_id=0,
-            proto_dump_file="logs/s1-p4runtime-requests.txt",
+            proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
         )
 
         # Send master arbitration update message to establish this controller as
@@ -26,7 +30,8 @@ class SwitchController(object):
 
         # Install the P4 program on the switches
         self.sw.SetForwardingPipelineConfig(
-            p4info=self.p4info_helper.p4info, bmv2_json_file_path=bmv2_file_path
+            p4info=self.p4info_helper.p4info,
+            bmv2_json_file_path=bmv2_file_path,
         )
         print("Installed P4 Program using SetForwardingPipelineConfig on s1")
 
@@ -110,14 +115,19 @@ class SwitchController(object):
                 print("%s: " % table_name, end=" ")
                 for m in entry.match:
                     print(
-                        self.p4info_helper.get_match_field_name(table_name, m.field_id),
+                        self.p4info_helper.get_match_field_name(
+                            table_name, m.field_id
+                        ),
                         end=" ",
                     )
                     print(
-                        "%r" % (self.p4info_helper.get_match_field_value(m),), end=" "
+                        "%r" % (self.p4info_helper.get_match_field_value(m),),
+                        end=" ",
                     )
                 action = entry.action.action
-                action_name = self.p4info_helper.get_actions_name(action.action_id)
+                action_name = self.p4info_helper.get_actions_name(
+                    action.action_id
+                )
                 print("->", action_name, end=" ")
                 for p in action.params:
                     print(
@@ -129,7 +139,9 @@ class SwitchController(object):
                     print("%r" % p.value, end=" ")
                 print()
 
-    def upsertEcmpNhopEntry(self, ecmp_select, dmac, ipv4, port, update_type="INSERT"):
+    def upsertEcmpNhopEntry(
+        self, ecmp_select, dmac, ipv4, port, update_type="INSERT"
+    ):
         table_entry = self.p4info_helper.buildTableEntry(
             table_name="MyIngress.ecmp_nhop",
             match_fields={"meta.ecmp_select": ecmp_select},

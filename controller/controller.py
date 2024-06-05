@@ -8,7 +8,9 @@ import grpc
 
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../utils/"))
+sys.path.append(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../utils/")
+)
 import p4runtime_lib.bmv2
 import p4runtime_lib.helper
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
@@ -39,7 +41,10 @@ def printGrpcError(e):
     print("(%s)" % status_code.name, end=" ")
     traceback = sys.exc_info()[2]
     if traceback:
-        print("[%s:%d]" % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno))
+        print(
+            "[%s:%d]"
+            % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno)
+        )
 
 
 @app.route("/insert_hop", methods=["POST"])
@@ -111,7 +116,7 @@ if __name__ == "__main__":
         type=str,
         action="store",
         required=False,
-        default="./build/load_balance.p4.p4info.txt",
+        default="../load_balancer/build/load_balance.p4.p4info.txt",
     )
     parser.add_argument(
         "--bmv2-json",
@@ -119,16 +124,21 @@ if __name__ == "__main__":
         type=str,
         action="store",
         required=False,
-        default="./build/load_balance.json",
+        default="../load_balancer/build/load_balance.json",
     )
     args = parser.parse_args()
 
     if not os.path.exists(args.p4info):
         parser.print_help()
-        print("\np4info file not found: %s\nHave you run 'make'?" % args.p4info)
+        print(
+            "\np4info file not found: %s\nHave you run 'make'?" % args.p4info
+        )
         parser.exit(1)
     if not os.path.exists(args.bmv2_json):
         parser.print_help()
-        print("\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json)
+        print(
+            "\nBMv2 JSON file not found: %s\nHave you run 'make'?"
+            % args.bmv2_json
+        )
         parser.exit(1)
     main(args.p4info, args.bmv2_json)
