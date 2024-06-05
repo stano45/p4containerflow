@@ -7,9 +7,9 @@ import sys
 sys.path.append(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../utils/")
 )
-import p4runtime_lib.bmv2
-import p4runtime_lib.helper
-from p4runtime_lib.switch import ShutdownAllSwitchConnections
+import p4runtime_lib.bmv2  # noqa
+import p4runtime_lib.helper  # noqa
+from p4runtime_lib.switch import ShutdownAllSwitchConnections  # noqa
 
 
 class SwitchController(object):
@@ -24,8 +24,10 @@ class SwitchController(object):
             proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
         )
 
-        # Send master arbitration update message to establish this controller as
-        # master (required by P4Runtime before performing any other write operation)
+        # Send master arbitration update message
+        # to establish this controller as
+        # master (required by P4Runtime before
+        # performing any other write operation)
         self.sw.MasterArbitrationUpdate()
 
         # Install the P4 program on the switches
@@ -87,7 +89,8 @@ class SwitchController(object):
         )
         self.sw.WriteTableEntry(table_entry)
         print(
-            f"Updated the 'send_frame' table on {self.sw.name=} with {egress_port=}, {smac=}"
+            f"Updated the 'send_frame' table on"
+            f"{self.sw.name=} with {egress_port=}, {smac=}"
         )
 
     def deleteSendFrameEntry(self, egress_port):
@@ -97,7 +100,8 @@ class SwitchController(object):
         )
         self.sw.WriteTableEntry(table_entry, update_type="DELETE")
         print(
-            f"Deleted a 'send_frame' table entry on {self.sw.name=} with {egress_port=}"
+            f"Deleted a 'send_frame' table entry on"
+            f"{self.sw.name=} with {egress_port=}"
         )
 
     def readTableRules(self):
@@ -150,7 +154,8 @@ class SwitchController(object):
         )
         self.sw.WriteTableEntry(table_entry, update_type=update_type)
         print(
-            f"Updated the 'ecmp_nhop' table on {self.sw.name=} with {ecmp_select=}, {ipv4=}, {dmac=}, {port=}"
+            f"Updated the 'ecmp_nhop' table on"
+            f"{self.sw.name=} with {ecmp_select=}, {ipv4=}, {dmac=}, {port=}"
         )
 
     def deleteEcmpNhopEntry(self, ecmp_select):
@@ -160,5 +165,6 @@ class SwitchController(object):
         )
         self.sw.WriteTableEntry(table_entry, update_type="DELETE")
         print(
-            f"Deleted a 'ecmp_nhop' table entry on {self.sw.name=} with {ecmp_select=}"
+            f"Deleted a 'ecmp_nhop' table entry on"
+            f"{self.sw.name=} with {ecmp_select=}"
         )
