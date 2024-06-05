@@ -11,12 +11,12 @@ from switch_controller import SwitchController
 app = Flask(__name__)
 
 global switchController
- 
+
 
 def main(p4info_file_path, bmv2_file_path):
     try:
         global switchController
-        switchController = SwitchController(p4info_file_path, bmv2_file_path )
+        switchController = SwitchController(p4info_file_path, bmv2_file_path)
     except KeyboardInterrupt:
         print("Shutting down.")
     except grpc.RpcError as e:
