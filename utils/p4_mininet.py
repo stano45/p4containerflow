@@ -23,7 +23,8 @@ from mininet.moduledeps import pathCheck
 from mininet.node import Host, Switch
 from netstat import check_listening_on_port
 
-SWITCH_START_TIMEOUT = 10 # seconds
+SWITCH_START_TIMEOUT = 10  # seconds
+
 
 class P4Host(Host):
     def config(self, **params):
@@ -45,29 +46,39 @@ class P4Host(Host):
     def describe(self):
         print("**********")
         print(self.name)
-        print("default interface: %s\t%s\t%s" %(
-            self.defaultIntf().name,
-            self.defaultIntf().IP(),
-            self.defaultIntf().MAC()
-        ))
+        print(
+            "default interface: %s\t%s\t%s"
+            % (
+                self.defaultIntf().name,
+                self.defaultIntf().IP(),
+                self.defaultIntf().MAC(),
+            )
+        )
         print("**********")
+
 
 class P4Switch(Switch):
     """P4 virtual switch"""
+
     device_id = 0
 
-    def __init__(self, name, sw_path = None, json_path = None,
-                 thrift_port = None,
-                 pcap_dump = False,
-                 log_console = False,
-                 log_file = None,
-                 verbose = False,
-                 device_id = None,
-                 enable_debugger = False,
-                 **kwargs):
+    def __init__(
+        self,
+        name,
+        sw_path=None,
+        json_path=None,
+        thrift_port=None,
+        pcap_dump=False,
+        log_console=False,
+        log_file=None,
+        verbose=False,
+        device_id=None,
+        enable_debugger=False,
+        **kwargs
+    ):
         Switch.__init__(self, name, **kwargs)
-        assert(sw_path)
-        assert(json_path)
+        assert sw_path
+        assert json_path
         # make sure that the provided sw_path is valid
         pathCheck(sw_path)
         # make sure that the provided JSON file exists
@@ -78,10 +89,13 @@ class P4Switch(Switch):
         self.json_path = json_path
         self.verbose = verbose
         logfile = "/tmp/p4s.{}.log".format(self.name)
-        self.output = open(logfile, 'w')
+        self.output = open(logfile, "w")
         self.thrift_port = thrift_port
         if check_listening_on_port(self.thrift_port):
-            error('%s cannot bind port %d because it is bound by another process\n' % (self.name, self.grpc_port))
+            error(
+                "%s cannot bind port %d because it "
+                "is bound by another process\n" % (self.name, self.grpc_port)
+            )
             exit(1)
         self.pcap_dump = pcap_dump
         self.enable_debugger = enable_debugger
@@ -120,26 +134,32 @@ class P4Switch(Switch):
         args = [self.sw_path]
         for port, intf in list(self.intfs.items()):
             if not intf.IP():
-                args.extend(['-i', str(port) + "@" + intf.name])
+                args.extend(["-i", str(port) + "@" + intf.name])
         if self.pcap_dump:
             args.append("--pcap %s" % self.pcap_dump)
         if self.thrift_port:
-            args.extend(['--thrift-port', str(self.thrift_port)])
+            args.extend(["--thrift-port", str(self.thrift_port)])
         if self.nanomsg:
-            args.extend(['--nanolog', self.nanomsg])
-        args.extend(['--device-id', str(self.device_id)])
+            args.extend(["--nanolog", self.nanomsg])
+        args.extend(["--device-id", str(self.device_id)])
         P4Switch.device_id += 1
         args.append(self.json_path)
         if self.enable_debugger:
             args.append("--debugger")
         if self.log_console:
             args.append("--log-console")
-        info(' '.join(args) + "\n")
+        info(" ".join(args) + "\n")
 
         pid = None
         with tempfile.NamedTemporaryFile() as f:
             # self.cmd(' '.join(args) + ' > /dev/null 2>&1 &')
-            self.cmd(' '.join(args) + ' >' + self.log_file + ' 2>&1 & echo $! >> ' + f.name)
+            self.cmd(
+                " ".join(args)
+                + " >"
+                + self.log_file
+                + " 2>&1 & echo $! >> "
+                + f.name
+            )
             pid = int(f.read())
         debug("P4 switch {} PID is {}.\n".format(self.name, pid))
         if not self.check_switch_started(pid):
@@ -150,14 +170,14 @@ class P4Switch(Switch):
     def stop(self):
         "Terminate P4 switch."
         self.output.flush()
-        self.cmd('kill %' + self.sw_path)
-        self.cmd('wait')
+        self.cmd("kill %" + self.sw_path)
+        self.cmd("wait")
         self.deleteIntfs()
 
     def attach(self, intf):
         "Connect a data port"
-        assert(0)
+        assert 0
 
     def detach(self, intf):
         "Disconnect a data port"
-        assert(0)
+        assert 0
