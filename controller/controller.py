@@ -7,27 +7,22 @@ from flask import Flask, request, jsonify
 import grpc
 
 from node_manager import NodeManager
-from switch_controller import SwitchController
 
 app = Flask(__name__)
 
-global switchController
 global nodeManager
 
 
 def main(p4info_file_path, bmv2_file_path):
     try:
-        global switchController
         global nodeManager
-        switchController = SwitchController(p4info_file_path, bmv2_file_path)
-        nodeManager = NodeManager(switchController)
+        nodeManager = NodeManager(p4info_file_path, bmv2_file_path)
     except KeyboardInterrupt:
         print("Shutting down.")
     except grpc.RpcError as e:
         printGrpcError(e)
         exit(1)
 
-    # Run Flask app
     app.run(port=5000)
 
 
@@ -66,67 +61,6 @@ def update_node():
         printGrpcError(e)
         return jsonify({"error": str(e)}), 500
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/insert_hop", methods=["POST"])
-def insert_hop():
-    data = request.get_json()
-
-    ecmp_select = data.get("ecmp_select")
-    dmac = data.get("dmac")
-    ipv4 = data.get("ipv4")
-    port = data.get("port")
-
-    if not all([ecmp_select, dmac, ipv4, port]):
-        return jsonify({"error": "Missing parameters"}), 400
-
-    try:
-        switchController.upsertEcmpNhopEntry(
-            ecmp_select, dmac, ipv4, port, update_type="INSERT"
-        )
-        return jsonify({"status": "success"}), 200
-    except grpc.RpcError as e:
-        printGrpcError(e)
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/update_hop", methods=["POST"])
-def update_hop():
-    data = request.get_json()
-
-    ecmp_select = data.get("ecmp_select")
-    dmac = data.get("dmac")
-    ipv4 = data.get("ipv4")
-    port = data.get("port")
-
-    if not all([ecmp_select, dmac, ipv4, port]):
-        return jsonify({"error": "Missing parameters"}), 400
-
-    try:
-        switchController.upsertEcmpNhopEntry(
-            ecmp_select, dmac, ipv4, port, update_type="MODIFY"
-        )
-        return jsonify({"status": "success"}), 200
-    except grpc.RpcError as e:
-        printGrpcError(e)
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/delete_hop", methods=["POST"])
-def delete_hop():
-    data = request.get_json()
-
-    ecmp_select = data.get("ecmp_select")
-
-    if ecmp_select is None:
-        return jsonify({"error": "Missing ecmp_select parameter"}), 400
-
-    try:
-        switchController.deleteEcmpNhopEntry(ecmp_select)
-        return jsonify({"status": "success"}), 200
-    except grpc.RpcError as e:
-        printGrpcError(e)
         return jsonify({"error": str(e)}), 500
 
 
