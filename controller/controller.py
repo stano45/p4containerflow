@@ -6,21 +6,26 @@ import sys
 from flask import Flask, request, jsonify
 import grpc
 
+from node_manager import NodeManager
 from switch_controller import SwitchController
 
 app = Flask(__name__)
 
 global switchController
+global nodeManager
 
 
 def main(p4info_file_path, bmv2_file_path):
     try:
         global switchController
+        global nodeManager
         switchController = SwitchController(p4info_file_path, bmv2_file_path)
+        nodeManager = NodeManager(switchController)
     except KeyboardInterrupt:
         print("Shutting down.")
     except grpc.RpcError as e:
         printGrpcError(e)
+        exit(1)
 
     # Run Flask app
     app.run(port=5000)
@@ -36,6 +41,32 @@ def printGrpcError(e):
             "[%s:%d]"
             % (traceback.tb_frame.f_code.co_filename, traceback.tb_lineno)
         )
+
+
+@app.route("/update_node", methods=["POST"])
+def update_node():
+    data = request.get_json()
+
+    old_ipv4 = data.get("old_ipv4")
+    new_ipv4 = data.get("new_ipv4")
+    dest_mac = data.get("dmac")
+
+    try:
+        egress_port = int(data.get("eport"))
+    except ValueError:
+        return jsonify({"error": "Invalid eport parameter"}), 400
+
+    if not all([old_ipv4, new_ipv4, dest_mac, egress_port]):
+        return jsonify({"error": "Missing parameters"}), 400
+
+    try:
+        nodeManager.updateNode(old_ipv4, new_ipv4, dest_mac, egress_port)
+        return jsonify({"status": "success"}), 200
+    except grpc.RpcError as e:
+        printGrpcError(e)
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/insert_hop", methods=["POST"])
