@@ -89,7 +89,7 @@ class SwitchController(object):
         )
         self.sw.WriteTableEntry(table_entry)
         print(
-            f"Updated the 'send_frame' table on"
+            f"Updated the 'send_frame' table on "
             f"{self.sw.name=} with {egress_port=}, {smac=}"
         )
 
@@ -154,7 +154,7 @@ class SwitchController(object):
         )
         self.sw.WriteTableEntry(table_entry, update_type=update_type)
         print(
-            f"Updated the 'ecmp_nhop' table on"
+            f"Updated the 'ecmp_nhop' table on "
             f"{self.sw.name=} with {ecmp_select=}, {ipv4=}, {dmac=}, {port=}"
         )
 

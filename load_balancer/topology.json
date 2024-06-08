@@ -23,6 +23,14 @@
                 "route add default gw 10.0.3.30 dev eth0",
                 "arp -i eth0 -s 10.0.3.30 08:00:00:00:03:00"
             ]
+        },
+        "h4": {
+            "ip": "10.0.4.4/24",
+            "mac": "08:00:00:00:04:04",
+            "commands": [
+                "route add default gw 10.0.4.40 dev eth0",
+                "arp -i eth0 -s 10.0.4.40 08:00:00:00:04:00"
+            ]
         }
     },
     "switches": {
@@ -32,6 +40,9 @@
         },
         "s3": {
             "runtime_json": "s3-runtime.json"
+        },
+        "s4": {
+            "runtime_json": "s4-runtime.json"
         }
     },
     "links": [
@@ -48,6 +59,10 @@
             "s3-p2"
         ],
         [
+            "s1-p4",
+            "s4-p2"
+        ],
+        [
             "s3-p3",
             "s2-p3"
         ],
@@ -58,6 +73,10 @@
         [
             "h3",
             "s3-p1"
+        ],
+        [
+            "h4",
+            "s4-p1"
         ]
     ]
 }
