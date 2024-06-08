@@ -43,6 +43,7 @@ header tcp_t {
 
 struct metadata {
     bit<14> ecmp_select;
+    bit<16> tcpLength;
 }
 
 struct headers {
@@ -112,11 +113,16 @@ control MyIngress(inout headers hdr,
               hdr.tcp.dstPort },
             ecmp_count);
     }
+    action set_rewrite_src(bit<32> new_src) {
+        hdr.ipv4.srcAddr = new_src;
+        meta.ecmp_select = 0;
+    }
     action set_nhop(bit<48> nhop_dmac, bit<32> nhop_ipv4, bit<9> port) {
         hdr.ethernet.dstAddr = nhop_dmac;
         hdr.ipv4.dstAddr = nhop_ipv4;
         standard_metadata.egress_spec = port;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+        meta.tcpLength = hdr.ipv4.totalLen - (bit<16>)(hdr.ipv4.ihl)*4;
     }
     table ecmp_group {
         key = {
@@ -125,6 +131,7 @@ control MyIngress(inout headers hdr,
         actions = {
             drop;
             set_ecmp_select;
+            set_rewrite_src;
         }
         size = 1024;
     }
@@ -195,6 +202,27 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
               hdr.ipv4.srcAddr,
               hdr.ipv4.dstAddr },
             hdr.ipv4.hdrChecksum,
+            HashAlgorithm.csum16);
+
+        update_checksum_with_payload(
+            hdr.tcp.isValid(),
+            {   hdr.ipv4.srcAddr,
+                hdr.ipv4.dstAddr,
+                8w0,
+                hdr.ipv4.protocol,
+                meta.tcpLength,
+                hdr.tcp.srcPort,
+                hdr.tcp.dstPort,
+                hdr.tcp.seqNo,
+                hdr.tcp.ackNo,
+                hdr.tcp.dataOffset,
+                hdr.tcp.res,
+                hdr.tcp.ecn,
+                hdr.tcp.ctrl,
+                hdr.tcp.window,
+                hdr.tcp.urgentPtr,
+            },
+            hdr.tcp.checksum,
             HashAlgorithm.csum16);
     }
 }
