@@ -74,19 +74,19 @@ class SwitchController(object):
         # Hops
         self.upsertEcmpNhopEntry(
             ecmp_select=0,
-            dmac="00:00:00:00:01:01",
+            dmac="08:00:00:00:01:01",
             ipv4="10.0.1.1",
             port=1,
         )
         self.upsertEcmpNhopEntry(
             ecmp_select=1,
-            dmac="00:00:00:00:01:02",
+            dmac="08:00:00:00:01:02",
             ipv4="10.0.2.2",
             port=2,
         )
         self.upsertEcmpNhopEntry(
             ecmp_select=2,
-            dmac="00:00:00:00:01:03",
+            dmac="08:00:00:00:01:03",
             ipv4="10.0.3.3",
             port=3,
         )
