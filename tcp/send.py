@@ -9,6 +9,7 @@ from scapy.all import IP, TCP, Ether, get_if_hwaddr, get_if_list, sendp
 def get_if():
     # ifs = get_if_list()
     iface = None  # "h1-eth0"
+    print(get_if_list())
     for i in get_if_list():
         if "eth0" in i:
             iface = i

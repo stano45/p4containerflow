@@ -24,3 +24,6 @@ logs/
 
 # IntelliJ / PyCharm
 .idea/
+
+example/server
+example/client

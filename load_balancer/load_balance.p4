@@ -33,16 +33,25 @@ header tcp_t {
     bit<32> seqNo;
     bit<32> ackNo;
     bit<4>  dataOffset;
-    bit<3>  res;
-    bit<3>  ecn;
-    bit<6>  ctrl;
+    bit<4>  res;
+    bit<1>  cwr;
+    bit<1>  ecn;
+    bit<1>  urg;
+    bit<1>  ack;
+    bit<1>  psh;
+    bit<1>  rst;
+    bit<1>  syn;
+    bit<1>  fin;
     bit<16> window;
     bit<16> checksum;
     bit<16> urgentPtr;
+    // error: hdr.tcp: argument cannot contain varbit fields
+    // varbit<320>  options;
 }
 
 struct metadata {
     bit<14> ecmp_select;
+    bit<16> tcpLength;
 }
 
 struct headers {
@@ -112,11 +121,16 @@ control MyIngress(inout headers hdr,
               hdr.tcp.dstPort },
             ecmp_count);
     }
+    action set_rewrite_src(bit<32> new_src) {
+        hdr.ipv4.srcAddr = new_src;
+        meta.ecmp_select = 0;
+    }
     action set_nhop(bit<48> nhop_dmac, bit<32> nhop_ipv4, bit<9> port) {
         hdr.ethernet.dstAddr = nhop_dmac;
         hdr.ipv4.dstAddr = nhop_ipv4;
         standard_metadata.egress_spec = port;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+        meta.tcpLength = hdr.ipv4.totalLen - (bit<16>)(hdr.ipv4.ihl)*4;
     }
     table ecmp_group {
         key = {
@@ -125,6 +139,7 @@ control MyIngress(inout headers hdr,
         actions = {
             drop;
             set_ecmp_select;
+            set_rewrite_src;
         }
         size = 1024;
     }
@@ -183,19 +198,52 @@ control MyComputeChecksum(inout headers hdr, inout metadata meta) {
      apply {
         update_checksum(
             hdr.ipv4.isValid(),
-            { hdr.ipv4.version,
-              hdr.ipv4.ihl,
-              hdr.ipv4.diffserv,
-              hdr.ipv4.totalLen,
-              hdr.ipv4.identification,
-              hdr.ipv4.flags,
-              hdr.ipv4.fragOffset,
-              hdr.ipv4.ttl,
-              hdr.ipv4.protocol,
-              hdr.ipv4.srcAddr,
-              hdr.ipv4.dstAddr },
+            {
+                hdr.ipv4.version,
+                hdr.ipv4.ihl,
+                hdr.ipv4.diffserv,
+                hdr.ipv4.totalLen,
+                hdr.ipv4.identification,
+                hdr.ipv4.flags,
+                hdr.ipv4.fragOffset,
+                hdr.ipv4.ttl,
+                hdr.ipv4.protocol,
+                hdr.ipv4.srcAddr,
+                hdr.ipv4.dstAddr 
+            },
             hdr.ipv4.hdrChecksum,
-            HashAlgorithm.csum16);
+            HashAlgorithm.csum16
+        );
+
+        update_checksum_with_payload(
+            hdr.tcp.isValid(),
+            {   
+                hdr.ipv4.srcAddr,
+                hdr.ipv4.dstAddr,
+                8w0,
+                hdr.ipv4.protocol,
+                meta.tcpLength,
+                hdr.tcp.srcPort,
+                hdr.tcp.dstPort,
+                hdr.tcp.seqNo,
+                hdr.tcp.ackNo,
+                hdr.tcp.dataOffset,
+                hdr.tcp.res,
+                hdr.tcp.cwr,
+                hdr.tcp.ecn,
+                hdr.tcp.urg,
+                hdr.tcp.ack,
+                hdr.tcp.psh,
+                hdr.tcp.rst,
+                hdr.tcp.syn,
+                hdr.tcp.fin,
+                hdr.tcp.window,
+                16w0,
+                hdr.tcp.urgentPtr
+            },
+            hdr.tcp.checksum,
+            HashAlgorithm.csum16
+        );
     }
 }
 
