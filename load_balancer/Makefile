@@ -5,7 +5,7 @@ LOG_DIR = logs
 all: run
 
 run: stop compile
-	xterm -T "s1" -hold -e "sudo simple_switch_grpc \
+	sudo simple_switch_grpc \
 		-i 1@s1-eth1 \
 		-i 2@s1-eth2 \
 		-i 3@s1-eth3 \
@@ -15,9 +15,12 @@ run: stop compile
 		--log-console \
 		--thrift-port 9090 \
 		-- \
-		--grpc-server-addr 0.0.0.0:50051" &
+		--grpc-server-addr 0.0.0.0:50051 > $(LOG_DIR)/s1.log \
+		> $(LOG_DIR)/s1.log \
+		2>&1 & \
+		echo $!
 
-	xterm -T "s2" -hold -e "sudo simple_switch_grpc \
+	sudo simple_switch_grpc \
 		-i 1@s2-eth1 \
 		-i 2@s2-eth2 \
 		--pcap $(PCAP_DIR) \
@@ -26,9 +29,12 @@ run: stop compile
 		--log-console \
 		--thrift-port 9091 \
 		-- \
-		--grpc-server-addr 0.0.0.0:50052" &
+		--grpc-server-addr 0.0.0.0:50052 > $(LOG_DIR)/s2.log \
+		> $(LOG_DIR)/s2.log \
+		2>&1 & \
+		echo $!
 
-	xterm -T "s3" -hold -e "sudo simple_switch_grpc \
+	sudo simple_switch_grpc \
 		-i 1@s3-eth1 \
 		-i 2@s3-eth2 \
 		--pcap $(PCAP_DIR) \
@@ -37,7 +43,10 @@ run: stop compile
 		--log-console \
 		--thrift-port 9092 \
 		-- \
-		--grpc-server-addr 0.0.0.0:50053" &
+		--grpc-server-addr 0.0.0.0:50053 \
+		> $(LOG_DIR)/s3.log \
+		2>&1 & \
+		echo $!
 	
 	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "sudo ip netns exec h1 /bin/bash" &
 	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "sudo ip netns exec h2 /bin/bash" &
@@ -54,7 +63,7 @@ net: clean
 	../scripts/build_network.sh
 
 stop:
-	sudo killall -s 9 xterm || true
+	sudo killall -s 9 simple_switch_grpc || true
 
 clean: stop
 	rm -f *.pcap
