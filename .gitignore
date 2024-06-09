@@ -25,5 +25,6 @@ logs/
 # IntelliJ / PyCharm
 .idea/
 
-example/server
-example/client
+# TCP server and client binaries
+tcp/server
+tcp/client
