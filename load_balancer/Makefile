@@ -52,10 +52,10 @@ dirs:
 
 veth:
 	sudo ip link add s1-eth1 type veth peer name h1-eth1
-	sudo ip link add s1-eth2 type veth peer name s2-eth1
-	sudo ip link add s1-eth3 type veth peer name s3-eth1
-	sudo ip link add s2-eth2 type veth peer name h2-eth1
-	sudo ip link add s3-eth2 type veth peer name h3-eth1
+	sudo ip link add s1-eth2 type veth peer name s2-eth2
+	sudo ip link add s1-eth3 type veth peer name s3-eth2
+	sudo ip link add s2-eth1 type veth peer name h2-eth1
+	sudo ip link add s3-eth1 type veth peer name h3-eth1
 
 	sudo sysctl net.ipv6.conf.s1-eth1.disable_ipv6=1
 	sudo sysctl net.ipv6.conf.s1-eth2.disable_ipv6=1
@@ -68,27 +68,46 @@ veth:
 	sudo sysctl net.ipv6.conf.h2-eth1.disable_ipv6=1
 	sudo sysctl net.ipv6.conf.h3-eth1.disable_ipv6=1
 
-	sudo ip link set s1-eth1 mtu 9500
-	sudo ip link set s1-eth2 mtu 9500
-	sudo ip link set s1-eth3 mtu 9500
-	sudo ip link set s2-eth1 mtu 9500
-	sudo ip link set s2-eth2 mtu 9500
-	sudo ip link set s3-eth1 mtu 9500
-	sudo ip link set s3-eth2 mtu 9500
-	sudo ip link set h1-eth1 mtu 9500
-	sudo ip link set h2-eth1 mtu 9500
-	sudo ip link set h3-eth1 mtu 9500
+	# sudo ip link set s1-eth1 mtu 9500
+	# sudo ip link set s1-eth2 mtu 9500
+	# sudo ip link set s1-eth3 mtu 9500
+	# sudo ip link set s2-eth1 mtu 9500
+	# sudo ip link set s2-eth2 mtu 9500
+	# sudo ip link set s3-eth1 mtu 9500
+	# sudo ip link set s3-eth2 mtu 9500
+	# sudo ip link set h1-eth1 mtu 9500
+	# sudo ip link set h2-eth1 mtu 9500
+	# sudo ip link set h3-eth1 mtu 9500
 
-	sudo ethtool -K s1-eth1 tx off
-	sudo ethtool -K s1-eth2 tx off
-	sudo ethtool -K s1-eth3 tx off
-	sudo ethtool -K s2-eth1 tx off
-	sudo ethtool -K s2-eth2 tx off
-	sudo ethtool -K s3-eth1 tx off
-	sudo ethtool -K s3-eth2 tx off
-	sudo ethtool -K h1-eth1 tx off
-	sudo ethtool -K h2-eth1 tx off
-	sudo ethtool -K h3-eth1 tx off
+	# sudo ethtool -K s1-eth1 tx off
+	# sudo ethtool -K s1-eth2 tx off
+	# sudo ethtool -K s1-eth3 tx off
+	# sudo ethtool -K s2-eth1 tx off
+	# sudo ethtool -K s2-eth2 tx off
+	# sudo ethtool -K s3-eth1 tx off
+	# sudo ethtool -K s3-eth2 tx off
+	# sudo ethtool -K h1-eth1 tx off
+	# sudo ethtool -K h2-eth1 tx off
+	# sudo ethtool -K h3-eth1 tx off
+	# sudo ethtool -K s1-eth1 rx off
+	# sudo ethtool -K s1-eth2 rx off
+	# sudo ethtool -K s1-eth3 rx off
+	# sudo ethtool -K s2-eth1 rx off
+	# sudo ethtool -K s2-eth2 rx off
+	# sudo ethtool -K s3-eth1 rx off
+	# sudo ethtool -K s3-eth2 rx off
+	# sudo ethtool -K h1-eth1 rx off
+	# sudo ethtool -K h2-eth1 rx off
+	# sudo ethtool -K h3-eth1 rx off
+
+	# sudo ip link set dev s1-eth1 address 00:00:00:01:01:00
+	# sudo ip link set dev s1-eth2 address 00:00:00:01:02:00
+	# sudo ip link set dev s1-eth2 address 00:00:00:01:02:00
+	# sudo ip link set dev s1-eth3 address 00:00:00:01:03:00
+	# sudo ip link set dev s2-eth1 address 00:00:00:02:01:00
+	# sudo ip link set dev s2-eth2 address 00:00:00:02:02:00
+	# sudo ip link set dev s3-eth1 address 00:00:00:03:01:00
+	# sudo ip link set dev s3-eth2 address 00:00:00:03:02:00
 
 	sudo ip netns add h1
 	sudo ip link set h1-eth1 netns h1
@@ -131,8 +150,8 @@ clean: stop
 	sudo ip link del s1-eth1 || true
 	sudo ip link del s1-eth2 || true
 	sudo ip link del s1-eth3 || true
-	sudo ip link del s2-eth2 || true
-	sudo ip link del s3-eth2 || true
+	sudo ip link del s2-eth1 || true
+	sudo ip link del s3-eth1 || true
 
 	sudo ip netns del h1 || true
 	sudo ip netns del h2 || true

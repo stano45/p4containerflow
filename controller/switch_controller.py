@@ -1,5 +1,6 @@
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
+import json
 import os
 import sys
 
@@ -10,19 +11,30 @@ sys.path.append(
 import p4runtime_lib.bmv2  # noqa
 import p4runtime_lib.helper  # noqa
 from p4runtime_lib.switch import ShutdownAllSwitchConnections  # noqa
+from p4runtime_lib.simple_controller import program_from_file  # noqa
 
 
 class SwitchController(object):
-    def __init__(self, p4info_file_path, bmv2_file_path):
+    def __init__(
+        self,
+        p4info_file_path,
+        bmv2_file_path,
+        sw_name,
+        sw_addr,
+        sw_id,
+        proto_dump_file,
+        initial_table_rules_file=None,
+    ):
         self.p4info_helper = p4runtime_lib.helper.P4InfoHelper(
             p4info_file_path
         )
         self.sw = p4runtime_lib.bmv2.Bmv2SwitchConnection(
-            name="s1",
-            address="127.0.0.1:50051",
-            device_id=0,
-            proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
+            name=sw_name,
+            address=sw_addr,
+            device_id=sw_id,
+            proto_dump_file=proto_dump_file,
         )
+        self.initial_table_rules_file = initial_table_rules_file
 
         # Send master arbitration update message
         # to establish this controller as
@@ -35,9 +47,20 @@ class SwitchController(object):
             p4info=self.p4info_helper.p4info,
             bmv2_json_file_path=bmv2_file_path,
         )
-        print("Installed P4 Program using SetForwardingPipelineConfig on s1")
+        print(
+            f"Installed P4 Program using"
+            f"SetForwardingPipelineConfig on {sw_name}"
+        )
 
-        self._writeTableEntriesS1()
+        if initial_table_rules_file:
+            with open(initial_table_rules_file, "r") as sw_conf_file:
+                sw_conf = json.load(sw_conf_file)
+                program_from_file(
+                    sw=self.sw,
+                    sw_conf=sw_conf,
+                    p4info_helper=self.p4info_helper,
+                    runtime_json=None,
+                )
 
     def __del__(self):
         ShutdownAllSwitchConnections()
