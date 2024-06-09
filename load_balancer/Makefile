@@ -64,6 +64,7 @@ net: clean
 
 stop:
 	sudo killall -s 9 simple_switch_grpc || true
+	sudo killall -s 9 xterm || true
 
 clean: stop
 	rm -f *.pcap

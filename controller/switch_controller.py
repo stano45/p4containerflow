@@ -1,17 +1,11 @@
 # Import P4Runtime lib from parent utils dir
 # Probably there's a better way of doing this.
 import json
-import os
-import sys
 
-
-sys.path.append(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../utils/")
-)
-import p4runtime_lib.bmv2  # noqa
-import p4runtime_lib.helper  # noqa
-from p4runtime_lib.switch import ShutdownAllSwitchConnections  # noqa
-from p4runtime_lib.simple_controller import program_from_file  # noqa
+import p4runtime_lib.bmv2
+import p4runtime_lib.helper
+from p4runtime_lib.switch import ShutdownAllSwitchConnections
+from p4runtime_lib.simple_controller import program_from_file
 
 
 class SwitchController(object):
