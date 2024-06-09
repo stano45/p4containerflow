@@ -6,6 +6,9 @@ run:
 net: 
 	cd load_balancer && make net
 
+stop:
+	cd load_balancer && make stop
+
 clean:
 	cd load_balancer && make clean
 
