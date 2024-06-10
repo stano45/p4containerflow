@@ -4,7 +4,9 @@ LOG_DIR = logs
 
 all: run
 
-run: stop compile
+run: stop compile run_switches h1 h2 h3 h4
+
+run_switches:	
 	sudo simple_switch_grpc \
 		-i 1@s1-eth1 \
 		-i 2@s1-eth2 \
@@ -47,11 +49,32 @@ run: stop compile
 		> $(LOG_DIR)/s3.log \
 		2>&1 & \
 		echo $!
-	
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "sudo ip netns exec h1 /bin/bash" &
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "sudo ip netns exec h2 /bin/bash" &
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "sudo ip netns exec h3 /bin/bash" &
 
+	sudo simple_switch_grpc \
+		-i 1@s4-eth1 \
+		-i 2@s4-eth2 \
+		--pcap $(PCAP_DIR) \
+		--device-id 3 \
+		$(BUILD_DIR)/load_balance.json \
+		--log-console \
+		--thrift-port 9093 \
+		-- \
+		--grpc-server-addr 0.0.0.0:50054 \
+		> $(LOG_DIR)/s4.log \
+		2>&1 & \
+		echo $!
+
+h1:
+	sudo ip netns exec h1 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+
+h2:
+	sudo ip netns exec h2 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+
+h3:
+	sudo ip netns exec h3 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+
+h4:
+	sudo ip netns exec h4 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
 
 compile: dirs
 	p4c-bm2-ss --p4v 16 --p4runtime-files $(BUILD_DIR)/load_balance.p4.p4info.txt -o $(BUILD_DIR)/load_balance.json load_balance.p4

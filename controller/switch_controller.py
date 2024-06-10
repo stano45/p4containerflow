@@ -59,59 +59,31 @@ class SwitchController(object):
     def __del__(self):
         ShutdownAllSwitchConnections()
 
-    def _writeTableEntriesS1(self):
-        # Group IP (for load balancing)
+    def upsertEcmpNhopEntry(
+        self, ecmp_select, dmac, ipv4, port, update_type="INSERT"
+    ):
         table_entry = self.p4info_helper.buildTableEntry(
-            table_name="MyIngress.ecmp_group",
-            default_action=True,
-            action_name="MyIngress.drop",
-            action_params={},
+            table_name="MyIngress.ecmp_nhop",
+            match_fields={"meta.ecmp_select": ecmp_select},
+            action_name="MyIngress.set_nhop",
+            action_params={"nhop_dmac": dmac, "nhop_ipv4": ipv4, "port": port},
         )
-        self.sw.WriteTableEntry(table_entry, update_type="MODIFY")
-        print("Installed ecmp_group drop rule on %s" % self.sw.name)
+        self.sw.WriteTableEntry(table_entry, update_type=update_type)
+        print(
+            f"Updated the 'ecmp_nhop' table on "
+            f"{self.sw.name=} with {ecmp_select=}, {ipv4=}, {dmac=}, {port=}"
+        )
 
+    def deleteEcmpNhopEntry(self, ecmp_select):
         table_entry = self.p4info_helper.buildTableEntry(
-            table_name="MyIngress.ecmp_group",
-            match_fields={"hdr.ipv4.dstAddr": ("10.0.0.1", 32)},
-            action_name="MyIngress.set_ecmp_select",
-            action_params={"ecmp_base": 1, "ecmp_count": 2},
+            table_name="MyIngress.ecmp_nhop",
+            match_fields={"meta.ecmp_select": ecmp_select},
         )
-        self.sw.WriteTableEntry(table_entry)
-        print("Installed ecmp_group set_ecmp_select rule on %s" % self.sw.name)
-
-        table_entry = self.p4info_helper.buildTableEntry(
-            table_name="MyIngress.ecmp_group",
-            match_fields={"hdr.ipv4.dstAddr": ("10.0.1.1", 32)},
-            action_name="MyIngress.set_rewrite_src",
-            action_params={"new_src": "10.0.0.1"},
+        self.sw.WriteTableEntry(table_entry, update_type="DELETE")
+        print(
+            f"Deleted a 'ecmp_nhop' table entry on"
+            f"{self.sw.name=} with {ecmp_select=}"
         )
-        self.sw.WriteTableEntry(table_entry)
-        print("Installed ecmp_group set_rewrite_src rule on %s" % self.sw.name)
-
-        # Hops
-        self.upsertEcmpNhopEntry(
-            ecmp_select=0,
-            dmac="08:00:00:00:01:01",
-            ipv4="10.0.1.1",
-            port=1,
-        )
-        self.upsertEcmpNhopEntry(
-            ecmp_select=1,
-            dmac="08:00:00:00:01:02",
-            ipv4="10.0.2.2",
-            port=2,
-        )
-        self.upsertEcmpNhopEntry(
-            ecmp_select=2,
-            dmac="08:00:00:00:01:03",
-            ipv4="10.0.3.3",
-            port=3,
-        )
-
-        # Egress
-        self.upsertSendFrameEntry(egress_port=1, smac="00:00:00:01:01:00")
-        self.upsertSendFrameEntry(egress_port=2, smac="00:00:00:01:02:00")
-        self.upsertSendFrameEntry(egress_port=3, smac="00:00:00:01:03:00")
 
     def upsertSendFrameEntry(self, egress_port, smac):
         table_entry = self.p4info_helper.buildTableEntry(
@@ -175,29 +147,3 @@ class SwitchController(object):
                     )
                     print("%r" % p.value, end=" ")
                 print()
-
-    def upsertEcmpNhopEntry(
-        self, ecmp_select, dmac, ipv4, port, update_type="INSERT"
-    ):
-        table_entry = self.p4info_helper.buildTableEntry(
-            table_name="MyIngress.ecmp_nhop",
-            match_fields={"meta.ecmp_select": ecmp_select},
-            action_name="MyIngress.set_nhop",
-            action_params={"nhop_dmac": dmac, "nhop_ipv4": ipv4, "port": port},
-        )
-        self.sw.WriteTableEntry(table_entry, update_type=update_type)
-        print(
-            f"Updated the 'ecmp_nhop' table on "
-            f"{self.sw.name=} with {ecmp_select=}, {ipv4=}, {dmac=}, {port=}"
-        )
-
-    def deleteEcmpNhopEntry(self, ecmp_select):
-        table_entry = self.p4info_helper.buildTableEntry(
-            table_name="MyIngress.ecmp_nhop",
-            match_fields={"meta.ecmp_select": ecmp_select},
-        )
-        self.sw.WriteTableEntry(table_entry, update_type="DELETE")
-        print(
-            f"Deleted a 'ecmp_nhop' table entry on"
-            f"{self.sw.name=} with {ecmp_select=}"
-        )

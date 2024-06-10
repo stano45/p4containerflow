@@ -51,6 +51,17 @@ def main(p4info_file_path, bmv2_file_path):
             proto_dump_file="../load_balancer/logs/s3-p4runtime-requests.txt",
             initial_table_rules_file="../load_balancer/s3-runtime.json",
         )
+
+        # s4 (no path to this switch from s1)
+        SwitchController(
+            p4info_file_path=p4info_file_path,
+            bmv2_file_path=bmv2_file_path,
+            sw_name="s4",
+            sw_addr="127.0.0.1:50054",
+            sw_id=3,
+            proto_dump_file="../load_balancer/logs/s4-p4runtime-requests.txt",
+            initial_table_rules_file="../load_balancer/s4-runtime.json",
+        )
     except KeyboardInterrupt:
         print("Shutting down.")
     except grpc.RpcError as e:
