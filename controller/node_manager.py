@@ -2,11 +2,8 @@ from switch_controller import SwitchController
 
 
 class NodeManager(object):
-    def __init__(self, p4info_file_path, bmv2_file_path):
-        self.switch_controller = SwitchController(
-            p4info_file_path, bmv2_file_path
-        )
-
+    def __init__(self, switch_controller: SwitchController):
+        self.switch_controller = switch_controller
         # ipv4 -> ecmp_select_id
         self.node_map = {
             "10.0.2.2": 1,

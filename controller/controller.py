@@ -6,6 +6,7 @@ import sys
 from flask import Flask, request, jsonify
 import grpc
 
+from switch_controller import SwitchController
 from node_manager import NodeManager
 
 app = Flask(__name__)
@@ -15,8 +16,52 @@ global nodeManager
 
 def main(p4info_file_path, bmv2_file_path):
     try:
+        # Program switches
+        # s1
+        switch_controller = SwitchController(
+            p4info_file_path=p4info_file_path,
+            bmv2_file_path=bmv2_file_path,
+            sw_name="s1",
+            sw_addr="127.0.0.1:50051",
+            sw_id=0,
+            proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
+            initial_table_rules_file="../load_balancer/s1-runtime.json",
+        )
         global nodeManager
-        nodeManager = NodeManager(p4info_file_path, bmv2_file_path)
+        nodeManager = NodeManager(switch_controller)
+
+        # s2
+        SwitchController(
+            p4info_file_path=p4info_file_path,
+            bmv2_file_path=bmv2_file_path,
+            sw_name="s2",
+            sw_addr="127.0.0.1:50052",
+            sw_id=1,
+            proto_dump_file="../load_balancer/logs/s2-p4runtime-requests.txt",
+            initial_table_rules_file="../load_balancer/s2-runtime.json",
+        )
+
+        # s3
+        SwitchController(
+            p4info_file_path=p4info_file_path,
+            bmv2_file_path=bmv2_file_path,
+            sw_name="s3",
+            sw_addr="127.0.0.1:50053",
+            sw_id=2,
+            proto_dump_file="../load_balancer/logs/s3-p4runtime-requests.txt",
+            initial_table_rules_file="../load_balancer/s3-runtime.json",
+        )
+
+        # s4 (no path to this switch from s1)
+        SwitchController(
+            p4info_file_path=p4info_file_path,
+            bmv2_file_path=bmv2_file_path,
+            sw_name="s4",
+            sw_addr="127.0.0.1:50054",
+            sw_id=3,
+            proto_dump_file="../load_balancer/logs/s4-p4runtime-requests.txt",
+            initial_table_rules_file="../load_balancer/s4-runtime.json",
+        )
     except KeyboardInterrupt:
         print("Shutting down.")
     except grpc.RpcError as e:

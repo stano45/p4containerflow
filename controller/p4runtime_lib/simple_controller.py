@@ -166,30 +166,35 @@ def program_switch(
         else:
             raise Exception("Should not be here")
 
-        if "table_entries" in sw_conf:
-            table_entries = sw_conf["table_entries"]
-            info("Inserting %d table entries..." % len(table_entries))
-            for entry in table_entries:
-                info(tableEntryToString(entry))
-                validateTableEntry(entry, p4info_helper, runtime_json)
-                insertTableEntry(sw, entry, p4info_helper)
-
-        if "multicast_group_entries" in sw_conf:
-            group_entries = sw_conf["multicast_group_entries"]
-            info("Inserting %d group entries..." % len(group_entries))
-            for entry in group_entries:
-                info(groupEntryToString(entry))
-                insertMulticastGroupEntry(sw, entry, p4info_helper)
-
-        if "clone_session_entries" in sw_conf:
-            clone_entries = sw_conf["clone_session_entries"]
-            info("Inserting %d clone entries..." % len(clone_entries))
-            for entry in clone_entries:
-                info(cloneEntryToString(entry))
-                insertCloneGroupEntry(sw, entry, p4info_helper)
+        program_from_file(sw, sw_conf, p4info_helper, runtime_json)
 
     finally:
         sw.shutdown()
+
+
+def program_from_file(sw, sw_conf, p4info_helper, runtime_json):
+    print("sw_conf: ", sw_conf)
+    if "table_entries" in sw_conf:
+        table_entries = sw_conf["table_entries"]
+        info("Inserting %d table entries..." % len(table_entries))
+        for entry in table_entries:
+            info(tableEntryToString(entry))
+            validateTableEntry(entry, p4info_helper, runtime_json)
+            insertTableEntry(sw, entry, p4info_helper)
+
+    if "multicast_group_entries" in sw_conf:
+        group_entries = sw_conf["multicast_group_entries"]
+        info("Inserting %d group entries..." % len(group_entries))
+        for entry in group_entries:
+            info(groupEntryToString(entry))
+            insertMulticastGroupEntry(sw, entry, p4info_helper)
+
+    if "clone_session_entries" in sw_conf:
+        clone_entries = sw_conf["clone_session_entries"]
+        info("Inserting %d clone entries..." % len(clone_entries))
+        for entry in clone_entries:
+            info(cloneEntryToString(entry))
+            insertCloneGroupEntry(sw, entry, p4info_helper)
 
 
 def validateTableEntry(flow, p4info_helper, runtime_json):

@@ -1,3 +1,96 @@
-BMV2_SWITCH_EXE = simple_switch_grpc
+BUILD_DIR = build
+PCAP_DIR = pcaps
+LOG_DIR = logs
 
-include ../utils/Makefile
+all: run
+
+run: stop compile run_switches h1 h2 h3 h4
+
+run_switches:	
+	sudo simple_switch_grpc \
+		-i 1@s1-eth1 \
+		-i 2@s1-eth2 \
+		-i 3@s1-eth3 \
+		--pcap $(PCAP_DIR) \
+		--device-id 0 \
+		$(BUILD_DIR)/load_balance.json \
+		--log-console \
+		--thrift-port 9090 \
+		-- \
+		--grpc-server-addr 0.0.0.0:50051 > $(LOG_DIR)/s1.log \
+		> $(LOG_DIR)/s1.log \
+		2>&1 & \
+		echo $!
+
+	sudo simple_switch_grpc \
+		-i 1@s2-eth1 \
+		-i 2@s2-eth2 \
+		--pcap $(PCAP_DIR) \
+		--device-id 1 \
+		$(BUILD_DIR)/load_balance.json \
+		--log-console \
+		--thrift-port 9091 \
+		-- \
+		--grpc-server-addr 0.0.0.0:50052 > $(LOG_DIR)/s2.log \
+		> $(LOG_DIR)/s2.log \
+		2>&1 & \
+		echo $!
+
+	sudo simple_switch_grpc \
+		-i 1@s3-eth1 \
+		-i 2@s3-eth2 \
+		--pcap $(PCAP_DIR) \
+		--device-id 2 \
+		$(BUILD_DIR)/load_balance.json \
+		--log-console \
+		--thrift-port 9092 \
+		-- \
+		--grpc-server-addr 0.0.0.0:50053 \
+		> $(LOG_DIR)/s3.log \
+		2>&1 & \
+		echo $!
+
+	sudo simple_switch_grpc \
+		-i 1@s4-eth1 \
+		-i 2@s4-eth2 \
+		--pcap $(PCAP_DIR) \
+		--device-id 3 \
+		$(BUILD_DIR)/load_balance.json \
+		--log-console \
+		--thrift-port 9093 \
+		-- \
+		--grpc-server-addr 0.0.0.0:50054 \
+		> $(LOG_DIR)/s4.log \
+		2>&1 & \
+		echo $!
+
+h1:
+	sudo ip netns exec h1 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+
+h2:
+	sudo ip netns exec h2 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+
+h3:
+	sudo ip netns exec h3 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+
+h4:
+	sudo ip netns exec h4 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+
+compile: dirs
+	p4c-bm2-ss --p4v 16 --p4runtime-files $(BUILD_DIR)/load_balance.p4.p4info.txt -o $(BUILD_DIR)/load_balance.json load_balance.p4
+
+dirs:
+	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
+
+net: clean
+	../scripts/build_network.sh
+
+stop:
+	sudo killall -s 9 simple_switch_grpc || true
+	sudo killall -s 9 xterm || true
+
+clean: stop
+	rm -f *.pcap
+	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
+	../scripts/destroy_network.sh
+	
