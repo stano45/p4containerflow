@@ -65,7 +65,7 @@ run_switches:
 		echo $!
 
 h1:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "sudo podman run -it --pod h1-pod --rm alpine-iperf /bin/ash" &
+	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "watch 'sudo podman rm -f iperf-client && sudo podman run --name iperf-client --pod h1-pod docker.io/networkstatic/iperf3 -c 10.0.0.0 -p 12345 -t 2'" &
 
 h2:
 	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "sudo podman logs -f iperf-server2" &
