@@ -65,16 +65,16 @@ run_switches:
 		echo $!
 
 h1:
-	sudo ip netns exec h1 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "sudo podman run -it --pod h1-pod --rm alpine-iperf /bin/ash" &
 
 h2:
-	sudo ip netns exec h2 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "sudo podman logs -f iperf-server2" &
 
 h3:
-	sudo ip netns exec h3 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "sudo podman logs -f iperf-server3" &
 
 h4:
-	sudo ip netns exec h4 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
+	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "sudo podman logs -f iperf-server4" &
 
 compile: dirs
 	p4c-bm2-ss --p4v 16 --p4runtime-files $(BUILD_DIR)/load_balance.p4.p4info.txt -o $(BUILD_DIR)/load_balance.json load_balance.p4
@@ -83,7 +83,7 @@ dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
 
 net: clean
-	../scripts/build_network.sh
+	../scripts/build_network_podman.sh
 
 stop:
 	sudo killall -s 9 simple_switch_grpc || true
@@ -92,5 +92,5 @@ stop:
 clean: stop
 	rm -f *.pcap
 	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
-	../scripts/destroy_network.sh
+	../scripts/destroy_network_podman.sh
 	

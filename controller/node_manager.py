@@ -6,8 +6,8 @@ class NodeManager(object):
         self.switch_controller = switch_controller
         # ipv4 -> ecmp_select_id
         self.node_map = {
-            "10.0.2.2": 1,
-            "10.0.3.3": 2,
+            "10.2.2.2": 1,
+            "10.3.3.3": 2,
         }
 
     def updateNode(self, old_ip, new_ip, dest_mac, egress_port):
