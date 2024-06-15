@@ -78,7 +78,7 @@
       },
       "action_name": "MyEgress.rewrite_mac",
       "action_params": {
-        "smac": "00:00:00:02:02:00"
+        "smac": "00:00:00:04:02:00"
       }
     }
   ]

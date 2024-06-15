@@ -13,31 +13,31 @@ sudo ip link set dev s3-eth2 address 00:00:00:03:02:00
 sudo podman network create --interface-name s1-eth1 --subnet 10.1.1.0/24 --gateway 10.1.1.10  h1-net
 sudo podman pod create --name h1-pod --network h1-net:ip=10.1.1.1 --mac-address 08:00:00:00:01:01
 # sudo podman run -d --name iperf-server1 --pod h1-pod docker.io/networkstatic/iperf3 -s
-sudo podman run -d --name iperf-server1 --pod h1-pod docker.io/redis
+sudo podman run -d --name iperf-server1 --pod h1-pod docker.io/subfuzion/netcat -vl 12345
 sudo ip link set dev s1-eth1 address 00:00:00:01:01:00
-sudo arp -i veth0 -s 10.1.1.10 00:00:00:01:01:00
+# sudo arp -i veth0 -s 10.1.1.10 00:00:00:01:01:00
 
 sudo podman network create --interface-name s2-eth1 --subnet 10.2.2.0/24 --gateway 10.2.2.20  h2-net
 sudo podman pod create --name h2-pod --network h2-net:ip=10.2.2.2 --mac-address 08:00:00:00:02:02
 #sudo podman run -d --name iperf-server2 --pod h2-pod docker.io/networkstatic/iperf3 -s
-sudo podman run -d --name iperf-server2 --pod h2-pod docker.io/redis
+sudo podman run -d --name iperf-server2 --pod h2-pod docker.io/subfuzion/netcat -vl 12345
 sudo ip link set dev s2-eth1 address 00:00:00:02:01:00
-sudo arp -i veth1 -s 10.2.2.20 00:00:00:02:02:00
+# sudo arp -i veth1 -s 10.2.2.20 00:00:00:02:02:00
 
 sudo podman network create --interface-name s3-eth1 --subnet 10.3.3.0/24 --gateway 10.3.3.30  h3-net
 sudo podman pod create --name h3-pod --network h3-net:ip=10.3.3.3 --mac-address 08:00:00:00:03:03
 # sudo podman run -d --name iperf-server3 --pod h3-pod docker.io/networkstatic/iperf3 -s
-sudo podman run -d --name iperf-server3 --pod h3-pod docker.io/redis
+sudo podman run -d --name iperf-server3 --pod h3-pod docker.io/subfuzion/netcat -vl 12345
 sudo ip link set dev s3-eth1 address 00:00:00:03:01:00
-sudo arp -i veth2 -s 10.3.3.30 00:00:00:03:03:00
+# sudo arp -i veth2 -s 10.3.3.30 00:00:00:03:03:00
 
 
 sudo podman network create --interface-name s4-eth1 --subnet 10.4.4.0/24 --gateway 10.4.4.40  h4-net
 sudo podman pod create --name h4-pod --network h4-net:ip=10.4.4.4 --mac-address 08:00:00:00:04:04
 # sudo podman run -d --name iperf-server4 --pod h4-pod docker.io/networkstatic/iperf3 -s
-sudo podman run -d --name iperf-server4 --pod h4-pod docker.io/redis
+sudo podman run -d --name iperf-server4 --pod h4-pod docker.io/subfuzion/netcat -vl 12345
 sudo ip link set dev s4-eth1 address 00:00:00:04:01:00
-sudo arp -i veth3 -s 10.4.4.40 00:00:00:04:04:00
+# sudo arp -i veth3 -s 10.4.4.40 00:00:00:04:04:00
 
 
 interfaces=(s1-eth1 s1-eth2 s1-eth3 s2-eth1 s2-eth2 s3-eth1 s3-eth2)
@@ -60,7 +60,6 @@ for iface in "${interfaces[@]}"; do
 done
 
 
-# Bring up interfaces (except host interfaces, which were already brought up)
-for iface in "${interfaces[@]:0:7}"; do
+for iface in "${interfaces[@]}"; do
     sudo ip link set dev $iface up
 done
