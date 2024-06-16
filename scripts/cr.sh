@@ -1,0 +1,2 @@
+sudo podman container checkpoint -e /tmp/server-checkpoint.tar.gz --keep --tcp-established server2
+sudo podman container restore -i /tmp/server-checkpoint.tar.gz --keep --tcp-established --ignore-static-ip --ignore-static-mac --pod=h4-pod

@@ -1,0 +1,9 @@
+FROM alpine:latest
+
+RUN apk update && apk add gcc libc-dev --no-cache
+
+COPY client.c /client.c
+
+RUN gcc -o client /client.c
+
+CMD ["./client", "10.0.0.0", "12345"]

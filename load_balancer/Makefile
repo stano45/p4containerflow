@@ -4,7 +4,7 @@ LOG_DIR = logs
 
 all: run
 
-run: stop compile run_switches h1 h2 h3 h4
+run: stop compile run_switches
 
 run_switches:	
 	sudo simple_switch_grpc \
@@ -63,18 +63,6 @@ run_switches:
 		> $(LOG_DIR)/s4.log \
 		2>&1 & \
 		echo $!
-
-h1:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "watch 'sudo podman rm -f iperf-client && sudo podman run --name iperf-client --pod h1-pod docker.io/networkstatic/iperf3 -c 10.0.0.0 -p 12345 -t 2'" &
-
-h2:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "sudo podman logs -f iperf-server2" &
-
-h3:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "sudo podman logs -f iperf-server3" &
-
-h4:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "sudo podman logs -f iperf-server4" &
 
 compile: dirs
 	p4c-bm2-ss --p4v 16 --p4runtime-files $(BUILD_DIR)/load_balance.p4.p4info.txt -o $(BUILD_DIR)/load_balance.json load_balance.p4
