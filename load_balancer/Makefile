@@ -71,7 +71,7 @@ dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
 
 net: clean
-	../scripts/build_network_podman.sh
+	../scripts/container_migration/build_network.sh
 
 stop:
 	sudo killall -s 9 simple_switch_grpc || true
@@ -80,5 +80,5 @@ stop:
 clean: stop
 	rm -f *.pcap
 	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
-	../scripts/destroy_network_podman.sh
+	../scripts/container_migration/destroy_network.sh
 	
