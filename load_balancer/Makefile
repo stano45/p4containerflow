@@ -11,6 +11,7 @@ run_switches:
 		-i 1@s1-eth1 \
 		-i 2@s1-eth2 \
 		-i 3@s1-eth3 \
+		-i 4@s1-eth4 \
 		--pcap $(PCAP_DIR) \
 		--device-id 0 \
 		$(BUILD_DIR)/load_balance.json \

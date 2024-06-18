@@ -1,45 +1,85 @@
 #!/bin/bash
 
-# Switch 1 port 2 <--> Switch 2 port 2
-sudo ip link add s1-eth2 type veth peer name s2-eth2
-sudo ip link set dev s1-eth2 address 00:00:00:01:02:00
-sudo ip link set dev s2-eth2 address 00:00:00:02:02:00
-# Switch 1 port 3 <--> Switch 3 port 2
-sudo ip link add s1-eth3 type veth peer name s3-eth2
-sudo ip link set dev s1-eth3 address 00:00:00:01:03:00
-sudo ip link set dev s3-eth2 address 00:00:00:03:02:00
+NUM_HOSTS=4
+
+# Container image and arguments
+IMG="tcp-server"
+ARGS=""
+
+# IMG="docker.io/networkstatic/iperf3"
+# ARGS="-s -p 12345"
+
+# IMG="docker.io/subfuzion/netcat"
+# ARGS="-vl 12345"
+
+for i in $(seq 1 $NUM_HOSTS); do
+    NET="h${i}-net"
+    POD="h${i}-pod"
+    CONTAINER="h${i}"
+    SUBNET="10.${i}.${i}.0/24"
+    GATEWAY="10.${i}.${i}.${i}0"
+    CONTAINER_IP="10.${i}.${i}.${i}"
+    CONTAINER_MAC="08:00:00:00:0${i}:0${i}"
+    BRIDGE="h${i}-br"
+    VETH="h${i}-veth"
+    SW_PORT_IFACE="s${i}-eth1"
+
+    # Podman networks (netavark BE)
+    # Creates bridges h1-br, h2-br, h3-br, h4-br
+    sudo podman network create -d bridge --interface-name $BRIDGE --subnet $SUBNET --route ${SUBNET},${GATEWAY} $NET
+
+    # Creates pods h1-pod, h2-pod, h3-pod, h4-pod
+    # Each pod is connected to a network and has a static IP and MAC address
+    sudo podman pod create --name $POD --network ${NET}:ip=$CONTAINER_IP --mac-address $CONTAINER_MAC
+
+    # Creates containers h1, h2, h3, h4
+    sudo podman run -d --name $CONTAINER --pod $POD --cap-add=NET_ADMIN $IMG $ARGS
+
+    # MAC of switch port
+    sudo podman exec $CONTAINER arp -s $GATEWAY 00:00:00:0${i}:01:00
+
+    # Set the default gateway of the container
+    sudo podman exec $CONTAINER ip route add default via $GATEWAY
+
+    # Add veth pair from bridge to switch port (host always on port 1)
+    sudo ip link add $VETH type veth peer name $SW_PORT_IFACE
+
+    # Set the master of the veth interfaces to the corresponding bridge
+    sudo ip link set $VETH master $BRIDGE
+done
+
+# Connect load balancer (s1) to other switches
+for i in $(seq 2 $NUM_HOSTS); do
+    sudo ip link add s1-eth${i} type veth peer name s${i}-eth2
+done
+
+# All interfaces
+interfaces=()
+
+# Assign MAC addresses to load balancer ports (s1)
+for i in $(seq 1 $NUM_HOSTS); do
+    iface="s1-eth${i}"
+    sudo ip link set dev $iface address 00:00:00:01:0${i}:00
+    interfaces+=($iface)
+done
+
+# Assign MAC addresses to (non load-balancer) switch ports (s2, s3...)
+for i in $(seq 2 $NUM_HOSTS); do
+    iface1="s${i}-eth1"
+    iface2="s${i}-eth2"
+    sudo ip link set dev $iface1 address 00:00:00:0${i}:01:00
+    sudo ip link set dev $iface2 address 00:00:00:0${i}:02:00
+    interfaces+=($iface1 $iface2)
+done
+
+# Add host-side veth interfaces to the list
+for i in $(seq 1 $NUM_HOSTS); do
+    interfaces+=("h${i}-veth")
+done
 
 
-sudo podman network create -d bridge -o isolate=true --interface-name s1-eth1 --subnet 10.1.1.0/24 --gateway 10.1.1.10 h1-net
-sudo podman pod create --name h1-pod --network h1-net:ip=10.1.1.1 --mac-address 08:00:00:00:01:01
-# sudo podman run -d --name server1 --pod h1-pod docker.io/networkstatic/iperf3 -s -p 12345
-# sudo podman run -d --name server1 --pod h1-pod docker.io/subfuzion/netcat -vl 12345
-sudo podman run -d --name server1 --pod h1-pod tcp-server
-sudo ip link set dev s1-eth1 address 00:00:00:01:01:00
-
-sudo podman network create -d bridge -o isolate=true  --interface-name s2-eth1 --subnet 10.2.2.0/24 --gateway 10.2.2.20 h2-net
-sudo podman pod create --name h2-pod --network h2-net:ip=10.2.2.2 --mac-address 08:00:00:00:02:02
-# sudo podman run -d --name server2 --pod h2-pod docker.io/networkstatic/iperf3 -s -p 12345
-# sudo podman run -d --name server2 --pod h2-pod docker.io/subfuzion/netcat -vl 12345
-sudo podman run -d --name server2 --pod h2-pod tcp-server
-sudo ip link set dev s2-eth1 address 00:00:00:02:01:00
-
-sudo podman network create -d bridge -o isolate=true  --interface-name s3-eth1 --subnet 10.3.3.0/24 --gateway 10.3.3.30 h3-net
-sudo podman pod create --name h3-pod --network h3-net:ip=10.3.3.3 --mac-address 08:00:00:00:03:03
-# sudo podman run -d --name server3 --pod h3-pod docker.io/networkstatic/iperf3 -s -p 12345
-# sudo podman run -d --name server3 --pod h3-pod docker.io/subfuzion/netcat -vl 12345
-sudo podman run -d --name server3 --pod h3-pod tcp-server
-sudo ip link set dev s3-eth1 address 00:00:00:03:01:00
-
-sudo podman network create -d bridge -o isolate=true --interface-name s4-eth1 --subnet 10.4.4.0/24 --gateway 10.4.4.40 h4-net
-sudo podman pod create --name h4-pod --network h4-net:ip=10.4.4.4 --mac-address 08:00:00:00:04:04
-# sudo podman run -d --name server4 --pod h4-pod docker.io/networkstatic/iperf3 -s -p 12345
-# sudo podman run -d --name server4 --pod h4-pod docker.io/subfuzion/netcat -vl 12345
-sudo podman run -d --name server4 --pod h4-pod tcp-server
-sudo ip link set dev s4-eth1 address 00:00:00:04:01:00
-
-interfaces=(s1-eth1 s1-eth2 s1-eth3 s2-eth1 s2-eth2 s3-eth1 s3-eth2)
 for iface in "${interfaces[@]}"; do
+printf "Interface: %s\n" $iface
     # Disable IPv6 on the interfaces, so that the Linux kernel
     # will not automatically send IPv6 MDNS, Router Solicitation,
     # and Multicast Listener Report packets on the interface,
@@ -55,9 +95,11 @@ for iface in "${interfaces[@]}"; do
     # 1500 bytes, so that P4 behavioral-model testing can be done
     # on jumbo frames.
     sudo ip link set $iface mtu 9500
-done
 
-
-for iface in "${interfaces[@]}"; do
+    # Bring the interfaces up
     sudo ip link set dev $iface up
 done
+
+
+# Enable IP forwarding
+sudo sysctl -w net.ipv4.ip_forward=1
