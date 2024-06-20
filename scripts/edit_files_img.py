@@ -1,8 +1,28 @@
+#!/usr/bin/env python3
+
 import json
 import sys
 import subprocess
 import tempfile
 import os
+import tarfile
+import shutil
+
+
+def check_crit_installed():
+    try:
+        subprocess.run(
+            ["crit", "--version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print(
+            "Error: 'crit' command not found."
+            "Please install CRIU and ensure 'crit' is in your PATH."
+        )
+        sys.exit(1)
 
 
 def update_src_addr(file_path, old_addr, new_addr):
@@ -46,20 +66,44 @@ def update_src_addr(file_path, old_addr, new_addr):
     os.remove(temp_file_path)
 
 
+def process_directory(input_dir, old_addr, new_addr):
+    img_file_path = os.path.join(input_dir, "checkpoint", "files.img")
+    if os.path.exists(img_file_path):
+        update_src_addr(img_file_path, old_addr, new_addr)
+    else:
+        print(f"Error: {img_file_path} does not exist")
+
+
+def process_tar(tar_path, old_addr, new_addr):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with tarfile.open(tar_path, "r:") as tar:
+            tar.extractall(path=temp_dir)
+
+        process_directory(temp_dir, old_addr, new_addr)
+
+        new_tar_path = tar_path + ".new"
+        with tarfile.open(new_tar_path, "w:") as tar:
+            tar.add(temp_dir, arcname="")
+
+        shutil.move(new_tar_path, tar_path)
+
+
 if __name__ == "__main__":
+    check_crit_installed()
+
     if len(sys.argv) != 4:
         print(
             "Usage: python edit_files_image.py"
-            "<file_path> <old_addr> <new_addr>"
+            "<input_dir_or_tar> <old_addr> <new_addr>"
         )
         sys.exit(1)
 
-    file_path = sys.argv[1]
+    input_path = sys.argv[1]
     old_addr = sys.argv[2]
     new_addr = sys.argv[3]
 
-    if not os.path.exists(file_path):
-        print(f"Error: {file_path} does not exist")
+    if not os.path.exists(input_path):
+        print(f"Error: {input_path} does not exist")
         sys.exit(1)
 
     if not old_addr or not new_addr:
@@ -70,4 +114,10 @@ if __name__ == "__main__":
         print("Error: old_addr and new_addr must be different")
         sys.exit(1)
 
-    update_src_addr(file_path, old_addr, new_addr)
+    if os.path.isdir(input_path):
+        process_directory(input_path, old_addr, new_addr)
+    elif input_path.endswith(".tar"):
+        process_tar(input_path, old_addr, new_addr)
+    else:
+        print("Error: input must be a directory or a .tar file")
+        sys.exit(1)

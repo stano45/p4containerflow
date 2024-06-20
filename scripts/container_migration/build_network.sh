@@ -26,14 +26,14 @@ for i in $(seq 1 $NUM_HOSTS); do
 
     # Podman networks (netavark BE)
     # Creates bridges h1-br, h2-br, h3-br, h4-br
-    sudo podman network create -d bridge --interface-name $BRIDGE --subnet $SUBNET --route ${SUBNET},${GATEWAY} $NET
+    sudo podman network create --driver bridge --interface-name $BRIDGE --subnet $SUBNET $NET
 
     # Creates pods h1-pod, h2-pod, h3-pod, h4-pod
     # Each pod is connected to a network and has a static IP and MAC address
-    sudo podman pod create --name $POD --network ${NET}:ip=$CONTAINER_IP --mac-address $CONTAINER_MAC
+    sudo podman pod create --name $POD --network $NET --mac-address $CONTAINER_MAC --ip $CONTAINER_IP
 
     # Creates containers h1, h2, h3, h4
-    sudo podman run -d --name $CONTAINER --pod $POD --cap-add=NET_ADMIN $IMG $ARGS
+    sudo podman run --detach --privileged --name $CONTAINER --pod $POD --cap-add NET_ADMIN $IMG $ARGS
 
     # MAC of switch port
     sudo podman exec $CONTAINER arp -s $GATEWAY 00:00:00:0${i}:01:00
@@ -103,3 +103,6 @@ done
 
 # Enable IP forwarding
 sudo sysctl -w net.ipv4.ip_forward=1
+
+sudo podman kill h4
+sudo podman rm -f h4

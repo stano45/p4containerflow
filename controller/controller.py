@@ -17,19 +17,6 @@ global nodeManager
 def main(p4info_file_path, bmv2_file_path):
     try:
         # Program switches
-        # s1
-        switch_controller = SwitchController(
-            p4info_file_path=p4info_file_path,
-            bmv2_file_path=bmv2_file_path,
-            sw_name="s1",
-            sw_addr="127.0.0.1:50051",
-            sw_id=0,
-            proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
-            initial_table_rules_file="../load_balancer/s1-runtime.json",
-        )
-        global nodeManager
-        nodeManager = NodeManager(switch_controller)
-
         # s2
         SwitchController(
             p4info_file_path=p4info_file_path,
@@ -62,6 +49,22 @@ def main(p4info_file_path, bmv2_file_path):
             proto_dump_file="../load_balancer/logs/s4-p4runtime-requests.txt",
             initial_table_rules_file="../load_balancer/s4-runtime.json",
         )
+
+        # s1
+        # s1 needs to be last so that this controller is set
+        # as master (otherwise write operations won't work)
+        switch_controller = SwitchController(
+            p4info_file_path=p4info_file_path,
+            bmv2_file_path=bmv2_file_path,
+            sw_name="s1",
+            sw_addr="127.0.0.1:50051",
+            sw_id=0,
+            proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
+            initial_table_rules_file="../load_balancer/s1-runtime.json",
+        )
+        global nodeManager
+        nodeManager = NodeManager(switch_controller)
+
     except KeyboardInterrupt:
         print("Shutting down.")
     except grpc.RpcError as e:
