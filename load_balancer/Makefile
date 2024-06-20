@@ -4,13 +4,14 @@ LOG_DIR = logs
 
 all: run
 
-run: stop compile run_switches h1 h2 h3 h4
+run: stop compile run_switches
 
 run_switches:	
 	sudo simple_switch_grpc \
 		-i 1@s1-eth1 \
 		-i 2@s1-eth2 \
 		-i 3@s1-eth3 \
+		-i 4@s1-eth4 \
 		--pcap $(PCAP_DIR) \
 		--device-id 0 \
 		$(BUILD_DIR)/load_balance.json \
@@ -64,18 +65,6 @@ run_switches:
 		2>&1 & \
 		echo $!
 
-h1:
-	sudo ip netns exec h1 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
-
-h2:
-	sudo ip netns exec h2 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
-
-h3:
-	sudo ip netns exec h3 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
-
-h4:
-	sudo ip netns exec h4 xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "/bin/bash -c 'cd ../scripts && /bin/bash'" &
-
 compile: dirs
 	p4c-bm2-ss --p4v 16 --p4runtime-files $(BUILD_DIR)/load_balance.p4.p4info.txt -o $(BUILD_DIR)/load_balance.json load_balance.p4
 
@@ -83,7 +72,7 @@ dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
 
 net: clean
-	../scripts/build_network.sh
+	../scripts/container_migration/build_network.sh
 
 stop:
 	sudo killall -s 9 simple_switch_grpc || true
@@ -92,5 +81,5 @@ stop:
 clean: stop
 	rm -f *.pcap
 	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
-	../scripts/destroy_network.sh
+	../scripts/container_migration/destroy_network.sh
 	

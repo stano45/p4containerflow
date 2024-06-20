@@ -1,0 +1,11 @@
+FROM alpine:latest
+
+RUN apk update && apk add gcc libc-dev --no-cache
+
+COPY server.c /server.c
+
+RUN gcc -o server /server.c
+
+EXPOSE 12345
+
+CMD ["./server", "12345"]
