@@ -26,7 +26,7 @@ for i in $(seq 1 $NUM_HOSTS); do
 
     # Podman networks (netavark BE)
     # Creates bridges h1-br, h2-br, h3-br, h4-br
-    sudo podman network create --driver bridge --interface-name $BRIDGE --subnet $SUBNET $NET
+    sudo podman network create --driver bridge --interface-name $BRIDGE --gateway $GATEWAY --subnet $SUBNET $NET
 
     # Creates pods h1-pod, h2-pod, h3-pod, h4-pod
     # Each pod is connected to a network and has a static IP and MAC address
@@ -35,11 +35,11 @@ for i in $(seq 1 $NUM_HOSTS); do
     # Creates containers h1, h2, h3, h4
     sudo podman run --detach --privileged --name $CONTAINER --pod $POD --cap-add NET_ADMIN $IMG $ARGS
 
-    # MAC of switch port
-    sudo podman exec $CONTAINER arp -s $GATEWAY 00:00:00:0${i}:01:00
+    # # MAC of switch port
+    # sudo podman exec $CONTAINER arp -s $GATEWAY 00:00:00:0${i}:01:00
 
-    # Set the default gateway of the container
-    sudo podman exec $CONTAINER ip route add default via $GATEWAY
+    # # Set the default gateway of the container
+    # sudo podman exec $CONTAINER ip route add default via $GATEWAY
 
     # Add veth pair from bridge to switch port (host always on port 1)
     sudo ip link add $VETH type veth peer name $SW_PORT_IFACE

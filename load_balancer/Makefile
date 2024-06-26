@@ -4,7 +4,10 @@ LOG_DIR = logs
 
 all: run
 
-run: stop compile run_switches
+run: stop compile run_switches_container
+
+run_switches_container: dirs
+	../scripts/container_migration/run_switches.sh
 
 run_switches:	
 	sudo simple_switch_grpc \
@@ -82,4 +85,5 @@ clean: stop
 	rm -f *.pcap
 	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
 	../scripts/container_migration/destroy_network.sh
+	../scripts/container_migration/destroy_switches.sh
 	
