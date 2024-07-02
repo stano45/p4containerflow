@@ -4,11 +4,12 @@ This is the repository for the Google Summer of Code project [P4-Enabled Contain
 
 
 ## Running Hosts and Switches in Containers
+
 ### Prerequisites
 - [Podman](https://podman.io/docs/installation)
-- [P4 Compiler (p4c)](https://github.com/p4lang/p4c)
 - [Python 3](https://www.python.org/downloads/)
 - [pip](https://pip.pypa.io/en/stable/installation/)
+- [P4 Compiler (p4c)](https://github.com/p4lang/p4c)
 
 ### Install Python Dependencies
 ```bash
@@ -16,6 +17,24 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+### Installing PI
+This project uses the P4Runtime API to communicate with the switch. The P4Runtime API is implemented in the [P4Runtime Interface (PI)](https://github.com/p4lang/PI).
+
+When installing PI, make sure to configure with the `--with-proto` flag to compile proto files and `--with-python_prefix=/path/to/this/repo/.venv` to install the p4 library in your virtual environment. For example:
+```bash
+./configure --with-proto --with-python_prefix=/home/p4/p4containerflow/.venv
+```
+After running:
+```bash
+sudo make install
+```
+The p4 library files in your `.venv` will be owned by the root user. Make sure to change owner by running:
+```bash
+sudo chown -R $USER .venv
+``` 
+
+
 
 ### Build Custom Podman Images
 ```bash
