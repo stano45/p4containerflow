@@ -35,7 +35,7 @@ In the root directory of the repo, run:
 make
 ```
 This will create compile the p4 code, create 4 networks (h1-net, h2-net, h3-net, h4-net), a pod in each network (h1-pod, h2-pod, h3-pod, h4-pod) and a host container in each network (h1, h2, h3, h4). A switch (s1) will be created in the host network, connected to all the host networks. For details on the network topology, refer to [scripts/switch_container/build.sh](scripts/switch_container/build.sh).
-Finally, the script will run the controller, which will programm the switch with the p4 code.
+Finally, the script will run the controller, which will program the switch with the p4 code.
 
 ### Run the TCP Client
 In a new terminal, run:
