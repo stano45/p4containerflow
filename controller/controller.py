@@ -3,11 +3,10 @@ import argparse
 import os
 import sys
 
-from flask import Flask, request, jsonify
 import grpc
-
-from switch_controller import SwitchController
+from flask import Flask, jsonify, request
 from node_manager import NodeManager
+from switch_controller import SwitchController
 
 app = Flask(__name__)
 
@@ -18,37 +17,37 @@ def main(p4info_file_path, bmv2_file_path):
     try:
         # Program switches
         # s2
-        SwitchController(
-            p4info_file_path=p4info_file_path,
-            bmv2_file_path=bmv2_file_path,
-            sw_name="s2",
-            sw_addr="127.0.0.1:50052",
-            sw_id=1,
-            proto_dump_file="../load_balancer/logs/s2-p4runtime-requests.txt",
-            initial_table_rules_file="../load_balancer/s2-runtime.json",
-        )
+        # SwitchController(
+        #     p4info_file_path=p4info_file_path,
+        #     bmv2_file_path=bmv2_file_path,
+        #     sw_name="s2",
+        #     sw_addr="10.2.2.22:50052",
+        #     sw_id=1,
+        #     proto_dump_file="../load_balancer/logs/s2-p4runtime-requests.txt",
+        #     initial_table_rules_file="../load_balancer/s2-runtime.json",
+        # )
 
         # s3
-        SwitchController(
-            p4info_file_path=p4info_file_path,
-            bmv2_file_path=bmv2_file_path,
-            sw_name="s3",
-            sw_addr="127.0.0.1:50053",
-            sw_id=2,
-            proto_dump_file="../load_balancer/logs/s3-p4runtime-requests.txt",
-            initial_table_rules_file="../load_balancer/s3-runtime.json",
-        )
+        # SwitchController(
+        #     p4info_file_path=p4info_file_path,
+        #     bmv2_file_path=bmv2_file_path,
+        #     sw_name="s3",
+        #     sw_addr="127.0.0.1:50053",
+        #     sw_id=2,
+        #     proto_dump_file="../load_balancer/logs/s3-p4runtime-requests.txt",
+        #     initial_table_rules_file="../load_balancer/s3-runtime.json",
+        # )
 
-        # s4 (no path to this switch from s1)
-        SwitchController(
-            p4info_file_path=p4info_file_path,
-            bmv2_file_path=bmv2_file_path,
-            sw_name="s4",
-            sw_addr="127.0.0.1:50054",
-            sw_id=3,
-            proto_dump_file="../load_balancer/logs/s4-p4runtime-requests.txt",
-            initial_table_rules_file="../load_balancer/s4-runtime.json",
-        )
+        # # s4 (no path to this switch from s1)
+        # SwitchController(
+        #     p4info_file_path=p4info_file_path,
+        #     bmv2_file_path=bmv2_file_path,
+        #     sw_name="s4",
+        #     sw_addr="127.0.0.1:50054",
+        #     sw_id=3,
+        #     proto_dump_file="../load_balancer/logs/s4-p4runtime-requests.txt",
+        #     initial_table_rules_file="../load_balancer/s4-runtime.json",
+        # )
 
         # s1
         # s1 needs to be last so that this controller is set
@@ -57,7 +56,7 @@ def main(p4info_file_path, bmv2_file_path):
             p4info_file_path=p4info_file_path,
             bmv2_file_path=bmv2_file_path,
             sw_name="s1",
-            sw_addr="127.0.0.1:50051",
+            sw_addr="10.3.3.33:50051",
             sw_id=0,
             proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
             initial_table_rules_file="../load_balancer/s1-runtime.json",
