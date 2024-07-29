@@ -50,7 +50,7 @@ sudo ip link set dev s3-eth2 address 00:00:00:03:02:00
 sudo ip link set dev s4-eth1 address 00:00:00:04:01:00
 sudo ip addr add 10.0.4.40/24 dev s4-eth1
 
-# Assign IP addresses to host interfaces (h1, h2, h3}, and bring them up, add default gateway
+# Assign IP addresses to host interfaces (h1, h2, h3), and bring them up, add default gateway
 sudo ip netns add h1
 sudo ip link set h1-eth1 netns h1
 sudo ip netns exec h1 ip link set lo up
@@ -87,7 +87,7 @@ sudo ip netns exec h4 ip link set dev h4-eth1 up
 sudo ip netns exec h4 route add default gw 10.0.4.40 dev h4-eth1
 sudo ip netns exec h4 arp -i h4-eth1 -s 10.0.4.40 00:00:00:04:01:00
 
-# Bring up interfaces (except host interfaces, which were already brought up}
+# Bring up interfaces (except host interfaces, which were already brought up)
 for iface in "${interfaces[@]:0:7}"; do
     sudo ip link set dev $iface up
 done

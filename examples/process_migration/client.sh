@@ -1,3 +1,3 @@
 #!/bin/bash
 
-/home/p4/p4containerflow/tcp/client 10.0.0.1 12345
+/home/p4/p4containerflow/tcp/client 10.0.1.10 12345

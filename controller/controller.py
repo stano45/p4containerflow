@@ -13,41 +13,42 @@ app = Flask(__name__)
 global nodeManager
 
 
-def main(p4info_file_path, bmv2_file_path):
+def main(p4info_file_path, bmv2_file_path, multi_switch=False):
     try:
-        # Program switches
-        # s2
-        # SwitchController(
-        #     p4info_file_path=p4info_file_path,
-        #     bmv2_file_path=bmv2_file_path,
-        #     sw_name="s2",
-        #     sw_addr="10.2.2.22:50052",
-        #     sw_id=1,
-        #     proto_dump_file="../load_balancer/logs/s2-p4runtime-requests.txt",
-        #     initial_table_rules_file="../load_balancer/s2-runtime.json",
-        # )
+        if multi_switch:
+            # Program switches
+            # s2
+            SwitchController(
+                p4info_file_path=p4info_file_path,
+                bmv2_file_path=bmv2_file_path,
+                sw_name="s2",
+                sw_addr="127.0.0.1:50052",
+                sw_id=1,
+                proto_dump_file="../load_balancer/logs/s2-p4runtime-requests.txt",
+                initial_table_rules_file="../load_balancer/s2-runtime.json",
+            )
 
-        # s3
-        # SwitchController(
-        #     p4info_file_path=p4info_file_path,
-        #     bmv2_file_path=bmv2_file_path,
-        #     sw_name="s3",
-        #     sw_addr="127.0.0.1:50053",
-        #     sw_id=2,
-        #     proto_dump_file="../load_balancer/logs/s3-p4runtime-requests.txt",
-        #     initial_table_rules_file="../load_balancer/s3-runtime.json",
-        # )
+            # s3
+            SwitchController(
+                p4info_file_path=p4info_file_path,
+                bmv2_file_path=bmv2_file_path,
+                sw_name="s3",
+                sw_addr="127.0.0.1:50053",
+                sw_id=2,
+                proto_dump_file="../load_balancer/logs/s3-p4runtime-requests.txt",
+                initial_table_rules_file="../load_balancer/s3-runtime.json",
+            )
 
-        # # s4 (no path to this switch from s1)
-        # SwitchController(
-        #     p4info_file_path=p4info_file_path,
-        #     bmv2_file_path=bmv2_file_path,
-        #     sw_name="s4",
-        #     sw_addr="127.0.0.1:50054",
-        #     sw_id=3,
-        #     proto_dump_file="../load_balancer/logs/s4-p4runtime-requests.txt",
-        #     initial_table_rules_file="../load_balancer/s4-runtime.json",
-        # )
+            # s4 (no path to this switch from s1)
+            SwitchController(
+                p4info_file_path=p4info_file_path,
+                bmv2_file_path=bmv2_file_path,
+                sw_name="s4",
+                sw_addr="127.0.0.1:50054",
+                sw_id=3,
+                proto_dump_file="../load_balancer/logs/s4-p4runtime-requests.txt",
+                initial_table_rules_file="../load_balancer/s4-runtime.json",
+            )
 
         # s1
         # s1 needs to be last so that this controller is set
@@ -129,6 +130,14 @@ if __name__ == "__main__":
         required=False,
         default="../load_balancer/build/load_balance.json",
     )
+    parser.add_argument(
+        "--multi_switch",
+        help="BMv2 JSON file from p4c",
+        type=bool,
+        action="store",
+        required=False,
+        default=False,
+    )
     args = parser.parse_args()
 
     if not os.path.exists(args.p4info):
@@ -144,4 +153,4 @@ if __name__ == "__main__":
             % args.bmv2_json
         )
         parser.exit(1)
-    main(args.p4info, args.bmv2_json)
+    main(args.p4info, args.bmv2_json, args.multi_switch)

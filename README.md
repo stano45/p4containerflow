@@ -61,4 +61,4 @@ In a new terminal, run:
 ```bash
 make tcp-client
 ```
-This will run the `tcp-client` image in the `h1-pod`. The client will continuously send messages to the switch (load balancer), at address `10.1.1.11`, which should be load-balanced between h2 and h3.
+This will run the `tcp-client` image in the `h1-pod`. The client will continuously send messages to the switch (load balancer), at address `10.0.1.11`, which should be load-balanced between h2 and h3.
