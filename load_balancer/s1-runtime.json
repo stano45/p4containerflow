@@ -33,7 +33,7 @@
             "action_name": "MyIngress.set_ecmp_select",
             "action_params": {
                 "ecmp_base": 1,
-                "ecmp_count": 1
+                "ecmp_count": 2
             }
         },
         {

@@ -1,3 +1,6 @@
+SHELL := /bin/bash
+MIGRATION_SCRIPT_PATH := ./scripts/switch_container/cr.sh
+
 all: compile net control
 
 net: 
@@ -8,6 +11,13 @@ compile:
 
 control:
 	cd controller && sleep 2 && make
+
+migrate:
+	@if [ "${SOURCE}" = "" ] || [ "${TARGET}" = "" ]; then \
+		echo "Usage: make migrate SOURCE=x TARGET=y"; \
+	else \
+		$(MIGRATION_SCRIPT_PATH) ${SOURCE} ${TARGET}; \
+	fi
 
 clean:
 	cd scripts/switch_container && make clean
