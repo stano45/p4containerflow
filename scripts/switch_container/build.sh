@@ -7,10 +7,10 @@ IMG="tcp-server"
 ARGS=""
 
 # IMG="docker.io/networkstatic/iperf3"
-# ARGS="-s -p 12345"
+# ARGS="-4 -s -p 12345"
 
-# IMG="docker.io/gophernet/netcat"
-# ARGS="-v -l -p 12345"
+# IMG="docker.io/subfuzion/netcat"
+# ARGS="-4 -v -l -p 12345"
 
 # Host 1
 printf "\n-----Creating host 1-----\n"
