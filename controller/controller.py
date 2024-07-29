@@ -56,7 +56,7 @@ def main(p4info_file_path, bmv2_file_path):
             p4info_file_path=p4info_file_path,
             bmv2_file_path=bmv2_file_path,
             sw_name="s1",
-            sw_addr="10.3.3.33:50051",
+            sw_addr="0.0.0.0:50051",
             sw_id=0,
             proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
             initial_table_rules_file="../load_balancer/s1-runtime.json",

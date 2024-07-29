@@ -19,14 +19,14 @@
             },
             "action_name": "MyIngress.set_rewrite_src",
             "action_params": {
-                "new_src": "10.1.1.11"
+                "new_src": "10.1.1.10"
             }
         },
         {
             "table": "MyIngress.ecmp_group",
             "match": {
                 "hdr.ipv4.dstAddr": [
-                    "10.1.1.11",
+                    "10.1.1.10",
                     32
                 ]
             },

@@ -1,10 +1,10 @@
 #!/bin/sh
 mkdir /pcaps
 simple_switch_grpc \
-    -i 1@eth0 \
-    -i 2@eth1 \
-    -i 3@eth2 \
-    -i 4@eth3 \
+    -i 1@h1-br \
+    -i 2@h2-br \
+    -i 3@h3-br \
+    -i 4@h4-br \
     --pcap /pcaps \
     --device-id 0 \
     /load_balance.json \
