@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import json
-import sys
-import subprocess
-import tempfile
 import os
-import tarfile
 import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
 
 
 def check_crit_installed():
@@ -23,7 +23,8 @@ def check_crit_installed():
             "Please install CRIU and ensure 'crit' is in your PATH."
         )
         sys.exit(1)
-        
+
+
 def update_src_addr(file_path, old_addr, new_addr):
     try:
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
@@ -53,7 +54,9 @@ def update_src_addr(file_path, old_addr, new_addr):
 
         if not updated:
             print(f"Error: could not find src_addr {old_addr} in {file_path}")
-            raise Exception(f"Error: could not find src_addr {old_addr} in {file_path}")
+            raise Exception(
+                f"Error: could not find src_addr {old_addr} in {file_path}"
+            )
 
         with open(temp_file_path, "w") as file:
             json.dump(data, file, indent=4)
@@ -74,7 +77,6 @@ def update_src_addr(file_path, old_addr, new_addr):
     finally:
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-
 
 
 def process_directory(input_dir, old_addr, new_addr):
