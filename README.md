@@ -38,7 +38,7 @@ sudo chown -R $USER .venv
 
 ### Build Custom Podman Images
 ```bash
-make build-images
+make images
 ```
 This will build the following images:
 - `tcp-client`: A simple TCP client that sends a message to a server (this will run in h1-pod)

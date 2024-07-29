@@ -1,13 +1,20 @@
 SHELL := /bin/bash
-MIGRATION_SCRIPT_PATH := ./scripts/switch_container/cr.sh
+EXAMPLES_PATH := ./examples
+
+PROCESS_MIGRATION_PATH := $(EXAMPLES_PATH)/process_migration
+CONTAINER_MIGRATION_PATH := $(EXAMPLES_PATH)/host_containers
+SWITCH_CONTAINER_PATH := $(EXAMPLES_PATH)/switch_container
+
+# Select the example to run
+SELECTED_EXAMPLE := $(PROCESS_MIGRATION_PATH)
 
 all: compile net control
 
-net:
-	cd scripts/switch_container && make
-
 compile:
 	cd load_balancer && make
+
+net: clean
+	cd $(SELECTED_EXAMPLE) && ./build.sh
 
 control:
 	cd controller && sleep 2 && make
@@ -16,13 +23,13 @@ migrate:
 	@if [ "${SOURCE}" = "" ] || [ "${TARGET}" = "" ]; then \
 		echo "Usage: make migrate SOURCE=x TARGET=y"; \
 	else \
-		$(MIGRATION_SCRIPT_PATH) ${SOURCE} ${TARGET}; \
+		cd $(SELECTED_EXAMPLE) && ./cr.sh ${SOURCE} ${TARGET}; \
 	fi
 
 clean:
-	cd scripts/switch_container && make clean
+	cd $(SELECTED_EXAMPLE) && ./teardown.sh
 
-build-images:
+images:
 	cd tcp && make
 
 tcp-client:

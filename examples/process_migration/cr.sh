@@ -23,23 +23,14 @@ TARGET_MAC=08:00:00:00:0$TARGET_IDX:0$TARGET_IDX
 # Creating checkpoint directory
 sudo mkdir -p $CHECKPOINT_DIR
 
-# Checkpoint the source container
-sudo podman container checkpoint --export $CHECKPOINT_PATH --compress none --keep --tcp-established $SOURCE_HOST
-sudo podman rm -f $SOURCE_HOST
+# Dump the process
+sudo criu dump -t $(pgrep server) --images-dir $CHECKPOINT_PATH -v4 -o ${CHECKPOINT_PATH}/dump.log --shell-job --tcp-established && echo "OK" || echo "Dump failed"
 
 # Edit the checkpoint files with new IP
 sudo /home/p4/p4containerflow/scripts/edit_files_img.py $CHECKPOINT_PATH $SOURCE_IP $TARGET_IP
 
-# Kill and remove the target container
-sudo podman container kill ${TARGET_HOST}
-sudo podman container rm -f ${TARGET_HOST}
-
-# Restore the container with new settings
-sudo podman container restore --import $CHECKPOINT_PATH --keep --tcp-established --ignore-static-ip --ignore-static-mac --pod ${TARGET_HOST}-pod
-
-# Rename the restored container
-# --name cannot be used with --tcp-established on restore
-sudo podman rename $SOURCE_HOST $TARGET_HOST
+# Restore the process
+sudo criu restore -D $CHECKPOINT_PATH -vvv --shell-job --tcp-established -d -o ${CHECKPOINT_PATH}/restore.log
 
 # Update the node information
 curl -X POST http://127.0.0.1:5000/update_node \

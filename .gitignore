@@ -30,3 +30,4 @@ tcp/server
 tcp/client
 
 .venv
+dump.log
