@@ -4,7 +4,7 @@ LOG_DIR = logs
 
 all: run
 
-run: stop compile run_switches
+run: compile
 
 run_switches:	
 	sudo simple_switch_grpc \
@@ -71,9 +71,6 @@ compile: dirs
 dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
 
-net: clean
-	../scripts/container_migration/build_network.sh
-
 stop:
 	sudo killall -s 9 simple_switch_grpc || true
 	sudo killall -s 9 xterm || true
@@ -81,5 +78,4 @@ stop:
 clean: stop
 	rm -f *.pcap
 	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
-	../scripts/container_migration/destroy_network.sh
 	

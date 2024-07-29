@@ -6,4 +6,4 @@ COPY client.c /client.c
 
 RUN gcc -o client /client.c
 
-CMD ["./client", "10.0.0.0", "12345"]
+CMD ["./client", "10.1.1.10", "12345"]

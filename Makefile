@@ -1,27 +1,19 @@
-all: net run 
-
-run:
-	cd load_balancer && make && sleep 2 && cd ../controller && make
+all: compile net control
 
 net: 
-	cd load_balancer && make net
+	cd scripts/switch_container && make
 
-stop:
-	sudo killall -s 9 xterm || true
-	cd load_balancer && make stop
+compile:
+	cd load_balancer && make
 
-clean: stop
-	cd load_balancer && make clean
+control:
+	cd controller && sleep 2 && make
 
-h1:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "sudo podman rm -f tcp-client && sudo podman run --name tcp-client --pod h1-pod tcp-client" &
+clean:
+	cd scripts/switch_container && make clean
 
-h2:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "sudo podman logs -f server2" &
+build-images:
+	cd tcp && make
 
-h3:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "sudo podman logs -f server3" &
-
-h4:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "sudo podman logs -f server4" &
-
+tcp-client:
+	sudo podman rm -f tcp-client && sudo podman run --name tcp-client --pod h1-pod tcp-client

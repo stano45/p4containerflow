@@ -28,3 +28,5 @@ logs/
 # TCP server and client binaries
 tcp/server
 tcp/client
+
+.venv
