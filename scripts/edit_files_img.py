@@ -41,9 +41,11 @@ def update_src_addr(file_path, old_addr, new_addr):
             data = json.load(file)
 
         updated = False
+        addrs = []
         for entry in data.get("entries", []):
             if entry.get("type") == "INETSK":
                 src_addrs = entry.get("isk", {}).get("src_addr")
+                addrs.append(src_addrs)
                 if old_addr in src_addrs:
                     entry["isk"]["src_addr"] = [new_addr]
                     print(
@@ -53,10 +55,15 @@ def update_src_addr(file_path, old_addr, new_addr):
                     updated = True
 
         if not updated:
-            print(f"Error: could not find src_addr {old_addr} in {file_path}")
-            raise Exception(
-                f"Error: could not find src_addr {old_addr} in {file_path}"
+            print(
+                f"Warning: could not find src_addr {old_addr} in {file_path}"
             )
+            print(f"Found src_addrs: {addrs}")
+            # Dump the current data to a file in /tmp for debugging
+            error_dump_path = "/tmp/decoded_image.json"
+            with open(error_dump_path, "w") as error_file:
+                json.dump(data, error_file, indent=4)
+            print(f"Decoded image dumped to {error_dump_path} for debugging.")
 
         with open(temp_file_path, "w") as file:
             json.dump(data, file, indent=4)

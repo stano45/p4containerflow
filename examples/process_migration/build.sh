@@ -1,5 +1,8 @@
 #!/bin/bash
 
+BUILD_DIR=../../load_balancer/build
+PCAP_DIR=../../load_balancer/pcaps
+LOG_DIR=../../load_balancer/logs
 
 # Switch 1 port 1 <--> Host 1
 sudo ip link add s1-eth1 type veth peer name h1-eth1
@@ -88,3 +91,62 @@ sudo ip netns exec h4 arp -i h4-eth1 -s 10.0.4.40 00:00:00:04:01:00
 for iface in "${interfaces[@]:0:7}"; do
     sudo ip link set dev $iface up
 done
+
+# Run switches
+sudo simple_switch_grpc \
+    -i 1@s1-eth1 \
+    -i 2@s1-eth2 \
+    -i 3@s1-eth3 \
+    -i 4@s1-eth4 \
+    --pcap ${PCAP_DIR} \
+    --device-id 0 \
+    ${BUILD_DIR}/load_balance.json \
+    --log-console \
+    --thrift-port 9090 \
+    -- \
+    --grpc-server-addr 0.0.0.0:50051 > ${LOG_DIR}/s1.log \
+    > ${LOG_DIR}/s1.log \
+    2>&1 & \
+    echo $!
+
+sudo simple_switch_grpc \
+    -i 1@s2-eth1 \
+    -i 2@s2-eth2 \
+    --pcap ${PCAP_DIR} \
+    --device-id 1 \
+    ${BUILD_DIR}/load_balance.json \
+    --log-console \
+    --thrift-port 9091 \
+    -- \
+    --grpc-server-addr 0.0.0.0:50052 > ${LOG_DIR}/s2.log \
+    > ${LOG_DIR}/s2.log \
+    2>&1 & \
+    echo $!
+
+sudo simple_switch_grpc \
+    -i 1@s3-eth1 \
+    -i 2@s3-eth2 \
+    --pcap ${PCAP_DIR} \
+    --device-id 2 \
+    ${BUILD_DIR}/load_balance.json \
+    --log-console \
+    --thrift-port 9092 \
+    -- \
+    --grpc-server-addr 0.0.0.0:50053 \
+    > ${LOG_DIR}/s3.log \
+    2>&1 & \
+    echo $!
+
+sudo simple_switch_grpc \
+    -i 1@s4-eth1 \
+    -i 2@s4-eth2 \
+    --pcap ${PCAP_DIR} \
+    --device-id 3 \
+    ${BUILD_DIR}/load_balance.json \
+    --log-console \
+    --thrift-port 9093 \
+    -- \
+    --grpc-server-addr 0.0.0.0:50054 \
+    > ${LOG_DIR}/s4.log \
+    2>&1 & \
+    echo $!

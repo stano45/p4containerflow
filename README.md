@@ -2,8 +2,18 @@
 
 This is the repository for the Google Summer of Code project [P4-Enabled Container Migration in Kubernetes](https://summerofcode.withgoogle.com/programs/2024/projects/sYbpOJhD). The project is actively being worked on.
 
+## Table of Contents
+- [P4ContainerFlow](#p4containerflow)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
+    - [Install Python Dependencies](#install-python-dependencies)
+    - [Installing PI](#installing-pi)
+    - [Build Custom Podman Images](#build-custom-podman-images)
+  - [Running examples](#running-examples)
 
-## Running Hosts and Switches in Containers
+
+## Installation
 
 ### Prerequisites
 - [Podman](https://podman.io/docs/installation)
@@ -34,11 +44,9 @@ The p4 library files in your `.venv` will be owned by the root user. Make sure t
 sudo chown -R $USER .venv
 ``` 
 
-
-
 ### Build Custom Podman Images
 ```bash
-make build-images
+make images
 ```
 This will build the following images:
 - `tcp-client`: A simple TCP client that sends a message to a server (this will run in h1-pod)
@@ -48,17 +56,10 @@ You can configure the target IP of the client and the port of the server in the 
 
 Furthermore, you can specify which image to run in the hosts by changing the `IMG` and `ARGS` variables in [scripts/switch_container/build.sh](scripts/switch_container/build.sh).
 
-### Creating the Network Topology, Hosts and Switches
-In the root directory of the repo, run:
-```bash
-make
-```
-This will create compile the p4 code, create 4 networks (h1-net, h2-net, h3-net, h4-net), a pod in each network (h1-pod, h2-pod, h3-pod, h4-pod) and a host container in each network (h1, h2, h3, h4). A switch (s1) will be created in the host network, connected to all the host networks. For details on the network topology, refer to [scripts/switch_container/build.sh](scripts/switch_container/build.sh).
-Finally, the script will run the controller, which will program the switch with the p4 code.
+## Running examples
+There are three examples in the `examples` directory:
+- [process_migration](examples/process_migration): Process migration demo using network namespaces
+- [host_containers](examples/host_containers): Container migration demo using containerized hosts, but not switch
+- [switch_container](examples/switch_container): Container migration demo with all hosts and the switch containerized
 
-### Run the TCP Client
-In a new terminal, run:
-```bash
-make tcp-client
-```
-This will run the `tcp-client` image in the `h1-pod`. The client will continuously send messages to the switch (load balancer), at address `10.1.1.11`, which should be load-balanced between h2 and h3.
+Simply `cd` into the desired example directory and follow the instructions in the README.
