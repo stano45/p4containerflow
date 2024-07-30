@@ -24,7 +24,9 @@ def main(p4info_file_path, bmv2_file_path, multi_switch=False):
                 sw_name="s2",
                 sw_addr="127.0.0.1:50052",
                 sw_id=1,
-                proto_dump_file="../load_balancer/logs/s2-p4runtime-requests.txt",
+                proto_dump_file=(
+                    "../load_balancer/logs/s2-p4runtime-requests.txt"
+                ),
                 initial_table_rules_file="../load_balancer/s2-runtime.json",
             )
 
@@ -35,7 +37,9 @@ def main(p4info_file_path, bmv2_file_path, multi_switch=False):
                 sw_name="s3",
                 sw_addr="127.0.0.1:50053",
                 sw_id=2,
-                proto_dump_file="../load_balancer/logs/s3-p4runtime-requests.txt",
+                proto_dump_file=(
+                    "../load_balancer/logs/s3-p4runtime-requests.txt"
+                ),
                 initial_table_rules_file="../load_balancer/s3-runtime.json",
             )
 
@@ -46,7 +50,9 @@ def main(p4info_file_path, bmv2_file_path, multi_switch=False):
                 sw_name="s4",
                 sw_addr="127.0.0.1:50054",
                 sw_id=3,
-                proto_dump_file="../load_balancer/logs/s4-p4runtime-requests.txt",
+                proto_dump_file=(
+                    "../load_balancer/logs/s4-p4runtime-requests.txt"
+                ),
                 initial_table_rules_file="../load_balancer/s4-runtime.json",
             )
 
