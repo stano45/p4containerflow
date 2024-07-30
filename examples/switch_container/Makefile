@@ -1,6 +1,6 @@
 include ../../Makefile
 
-all: compile build control_multi_switch
+all: compile build control
 
 terminals: h1 h2 h3 h4
 

@@ -1,36 +1,16 @@
-SHELL := /bin/bash
-EXAMPLES_PATH := ./examples
-
-PROCESS_MIGRATION_PATH := $(EXAMPLES_PATH)/process_migration
-CONTAINER_MIGRATION_PATH := $(EXAMPLES_PATH)/host_containers
-SWITCH_CONTAINER_PATH := $(EXAMPLES_PATH)/switch_container
-
-# Select the example to run
-SELECTED_EXAMPLE := $(PROCESS_MIGRATION_PATH)
-
-all: compile net control
+all:
 
 compile:
-	cd load_balancer && make
+	cd /home/p4/p4containerflow/load_balancer && make
 
-net: clean
-	cd $(SELECTED_EXAMPLE) && ./build.sh
+control_multi_switch:
+	cd /home/p4/p4containerflow/controller && sleep 2 && ./controller.py --multi_switch=True
 
 control:
-	cd controller && sleep 2 && ./controller.py --multi_switch=True
-
-migrate:
-	@if [ "${SOURCE}" = "" ] || [ "${TARGET}" = "" ]; then \
-		echo "Usage: make migrate SOURCE=x TARGET=y"; \
-	else \
-		cd $(SELECTED_EXAMPLE) && ./cr.sh ${SOURCE} ${TARGET}; \
-	fi
-
-clean:
-	cd $(SELECTED_EXAMPLE) && ./teardown.sh
+	cd /home/p4/p4containerflow/controller && sleep 2 && ./controller.py
 
 images:
-	cd tcp && make
+	cd /home/p4/p4containerflow/tcp && make
 
 tcp-client:
 	sudo podman run -it --rm --replace --name tcp-client --pod h1-pod tcp-client

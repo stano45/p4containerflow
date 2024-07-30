@@ -1,6 +1,8 @@
 #!/bin/bash
 NUM_HOSTS=4
 
+sudo killall -s 9 simple_switch_grpc
+sudo killall -s 9 xterm
 
 for i in $(seq 1 $NUM_HOSTS); do
     sudo podman container kill h${i}

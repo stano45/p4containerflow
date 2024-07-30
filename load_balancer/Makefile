@@ -4,7 +4,7 @@ LOG_DIR = logs
 
 all: compile
 
-compile: dirs
+compile: clean dirs
 	p4c-bm2-ss --p4v 16 --p4runtime-files $(BUILD_DIR)/load_balance.p4.p4info.txt -o $(BUILD_DIR)/load_balance.json load_balance.p4
 
 dirs:

@@ -1,4 +1,7 @@
 #!/bin/bash
+BUILD_DIR=../../load_balancer/build
+PCAP_DIR=../../load_balancer/pcaps
+LOG_DIR=../../load_balancer/logs
 
 NUM_HOSTS=4
 
@@ -16,9 +19,9 @@ for i in $(seq 1 $NUM_HOSTS); do
     NET="h${i}-net"
     POD="h${i}-pod"
     CONTAINER="h${i}"
-    SUBNET="10.${i}.${i}.0/24"
-    GATEWAY="10.${i}.${i}.${i}0"
-    CONTAINER_IP="10.${i}.${i}.${i}"
+    SUBNET="10.0.${i}.0/24"
+    GATEWAY="10.0.${i}.${i}0"
+    CONTAINER_IP="10.0.${i}.${i}"
     CONTAINER_MAC="08:00:00:00:0${i}:0${i}"
     BRIDGE="h${i}-br"
     VETH="h${i}-veth"
@@ -106,3 +109,62 @@ sudo sysctl -w net.ipv4.ip_forward=1
 
 sudo podman kill h4
 sudo podman rm -f h4
+
+# Run switches
+sudo simple_switch_grpc \
+    -i 1@s1-eth1 \
+    -i 2@s1-eth2 \
+    -i 3@s1-eth3 \
+    -i 4@s1-eth4 \
+    --pcap ${PCAP_DIR} \
+    --device-id 0 \
+    ${BUILD_DIR}/load_balance.json \
+    --log-console \
+    --thrift-port 9090 \
+    -- \
+    --grpc-server-addr 0.0.0.0:50051 > ${LOG_DIR}/s1.log \
+    > ${LOG_DIR}/s1.log \
+    2>&1 & \
+    echo $!
+
+sudo simple_switch_grpc \
+    -i 1@s2-eth1 \
+    -i 2@s2-eth2 \
+    --pcap ${PCAP_DIR} \
+    --device-id 1 \
+    ${BUILD_DIR}/load_balance.json \
+    --log-console \
+    --thrift-port 9091 \
+    -- \
+    --grpc-server-addr 0.0.0.0:50052 > ${LOG_DIR}/s2.log \
+    > ${LOG_DIR}/s2.log \
+    2>&1 & \
+    echo $!
+
+sudo simple_switch_grpc \
+    -i 1@s3-eth1 \
+    -i 2@s3-eth2 \
+    --pcap ${PCAP_DIR} \
+    --device-id 2 \
+    ${BUILD_DIR}/load_balance.json \
+    --log-console \
+    --thrift-port 9092 \
+    -- \
+    --grpc-server-addr 0.0.0.0:50053 \
+    > ${LOG_DIR}/s3.log \
+    2>&1 & \
+    echo $!
+
+sudo simple_switch_grpc \
+    -i 1@s4-eth1 \
+    -i 2@s4-eth2 \
+    --pcap ${PCAP_DIR} \
+    --device-id 3 \
+    ${BUILD_DIR}/load_balance.json \
+    --log-console \
+    --thrift-port 9093 \
+    -- \
+    --grpc-server-addr 0.0.0.0:50054 \
+    > ${LOG_DIR}/s4.log \
+    2>&1 & \
+    echo $!
