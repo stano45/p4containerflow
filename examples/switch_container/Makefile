@@ -28,3 +28,5 @@ h3:
 
 h4:
 	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "sudo podman logs -f h4" &
+
+.PHONY: all terminals build teardown migrate h1 h2 h3 h4

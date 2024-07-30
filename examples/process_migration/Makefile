@@ -29,3 +29,5 @@ h3:
 
 h4:
 	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "sudo ip netns exec h4 /bin/bash" &
+
+.PHONY: all terminals build teardown migrate h1 h2 h3 h4
