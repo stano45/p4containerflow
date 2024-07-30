@@ -48,17 +48,10 @@ You can configure the target IP of the client and the port of the server in the 
 
 Furthermore, you can specify which image to run in the hosts by changing the `IMG` and `ARGS` variables in [scripts/switch_container/build.sh](scripts/switch_container/build.sh).
 
-### Creating the Network Topology, Hosts and Switches
-In the root directory of the repo, run:
-```bash
-make
-```
-This will create compile the p4 code, create 4 networks (h1-net, h2-net, h3-net, h4-net), a pod in each network (h1-pod, h2-pod, h3-pod, h4-pod) and a host container in each network (h1, h2, h3, h4). A switch (s1) will be created in the host network, connected to all the host networks. For details on the network topology, refer to [scripts/switch_container/build.sh](scripts/switch_container/build.sh).
-Finally, the script will run the controller, which will program the switch with the p4 code.
+### Running examples
+There are three examples in the `examples` directory:
+- [process_migration](examples/process_migration): Process migration demo using network namespaces
+- [host_containers](examples/host_containers): Container migration demo using containerized hosts, but not switch
+- [switch_container](examples/switch_container): Container migration demo with all hosts and the switch containerized
 
-### Run the TCP Client
-In a new terminal, run:
-```bash
-make tcp-client
-```
-This will run the `tcp-client` image in the `h1-pod`. The client will continuously send messages to the switch (load balancer), at address `10.0.1.11`, which should be load-balanced between h2 and h3.
+Simply `cd` into the desired example directory and follow the instructions in the README.
