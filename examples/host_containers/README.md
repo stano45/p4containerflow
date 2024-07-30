@@ -28,7 +28,7 @@ make migrate SOURCE=<> TARGET=<>
 
 To cleanup the topology, networks, pods, and containers, run:
 ```bash
-make teardown
+make clean
 ```
 
 To show logs of a given container, run:

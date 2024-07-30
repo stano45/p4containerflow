@@ -4,11 +4,11 @@ all: compile build control
 
 terminals: h1 h2 h3 h4
 
-build: teardown
+build: clean
 	./build.sh
 
-teardown:
-	./teardown.sh
+clean:
+	./clean.sh
 
 migrate:
 	@if [ "${SOURCE}" = "" ] || [ "${TARGET}" = "" ]; then \
@@ -29,4 +29,4 @@ h3:
 h4:
 	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "sudo podman logs -f h4" &
 
-.PHONY: all terminals build teardown migrate h1 h2 h3 h4
+.PHONY: all terminals build clean migrate h1 h2 h3 h4
