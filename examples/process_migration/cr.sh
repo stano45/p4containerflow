@@ -23,14 +23,15 @@ TARGET_MAC=08:00:00:00:0$TARGET_IDX:0$TARGET_IDX
 # Creating checkpoint directory
 sudo mkdir -p $CHECKPOINT_DIR
 
+pid=$(ps $(sudo ip netns pids $SOURCE_HOST) | grep server.sh | awk '{print $1}')
 # Dump the process
-sudo criu dump -t $(pgrep server) --images-dir $CHECKPOINT_PATH -v4 -o ${CHECKPOINT_PATH}/dump.log --shell-job --tcp-established && echo "OK" || echo "Dump failed"
+sudo criu dump -t $pid --images-dir $CHECKPOINT_DIR -v4 -o ${CHECKPOINT_DIR}/dump.log --shell-job --tcp-established && echo "OK" || echo "Dump failed"
 
 # Edit the checkpoint files with new IP
-sudo /home/p4/p4containerflow/scripts/edit_files_img.py $CHECKPOINT_PATH $SOURCE_IP $TARGET_IP
+sudo /home/p4/p4containerflow/scripts/edit_files_img.py $CHECKPOINT_DIR $SOURCE_IP $TARGET_IP
 
 # Restore the process
-sudo criu restore -D $CHECKPOINT_PATH -vvv --shell-job --tcp-established -d -o ${CHECKPOINT_PATH}/restore.log
+sudo criu restore -D $CHECKPOINT_DIR -vvv --shell-job --tcp-established -d -o ${CHECKPOINT_DIR}/restore.log
 
 # Update the node information
 curl -X POST http://127.0.0.1:5000/update_node \
