@@ -55,7 +55,9 @@ def update_src_addr(file_path, old_addr, new_addr):
                     updated = True
 
         if not updated:
-            print(f"Warning: could not find src_addr {old_addr} in {file_path}")
+            print(
+                f"Warning: could not find src_addr {old_addr} in {file_path}"
+            )
             print(f"Found src_addrs: {addrs}")
             # Dump the current data to a file in /tmp for debugging
             error_dump_path = "/tmp/decoded_image.json"
