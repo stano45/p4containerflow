@@ -3,7 +3,7 @@ MIGRATION_SCRIPT_PATH := ./scripts/switch_container/cr.sh
 
 all: compile net control
 
-net: 
+net:
 	cd scripts/switch_container && make
 
 compile:
@@ -33,3 +33,5 @@ netcat-client:
 
 iperf-client:
 	sudo podman run -it --rm --replace --name iperf-client --pod h1-pod docker.io/networkstatic/iperf3 -4 -c 10.1.1.10 -p 12345 -t 30
+
+.PHONY: all net compile control clean build-images tcp-client netcat-client iperf-client

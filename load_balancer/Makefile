@@ -6,7 +6,7 @@ all: run
 
 run: compile
 
-run_switches:	
+run_switches:
 	sudo simple_switch_grpc \
 		-i 1@s1-eth1 \
 		-i 2@s1-eth2 \
@@ -78,4 +78,5 @@ stop:
 clean: stop
 	rm -f *.pcap
 	rm -rf $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
-	
+
+.PHONY: all run run_switches compile dirs stop clean

@@ -6,7 +6,7 @@ client-bin:: client.c
 server-bin:: server.c
 	gcc -Wall -o server server.c
 
-server-container:: Containerfile.server 
+server-container:: Containerfile.server
 	sudo podman build -t tcp-server -f Containerfile.server .
 
 client-container:: Containerfile.client
@@ -15,3 +15,5 @@ client-container:: Containerfile.client
 clean:
 	rm -rf client server
 	sudo podman rmi tcp-server tcp-client
+
+.PHONY: all client-bin server-bin server-container clean
