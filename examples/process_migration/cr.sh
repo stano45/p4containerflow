@@ -28,7 +28,7 @@ pid=$(ps $(sudo ip netns pids $SOURCE_HOST) | grep server.sh | awk '{print $1}')
 sudo criu dump -t $pid --images-dir $CHECKPOINT_DIR -v4 -o ${CHECKPOINT_DIR}/dump.log --shell-job --tcp-established && echo "OK" || echo "Dump failed"
 
 # Edit the checkpoint files with new IP
-sudo /home/p4/p4containerflow/scripts/edit_files_img.py $CHECKPOINT_DIR $SOURCE_IP $TARGET_IP
+sudo ../../scripts/edit_files_img.py $CHECKPOINT_DIR $SOURCE_IP $TARGET_IP
 
 # Restore the process
 sudo criu restore -D $CHECKPOINT_DIR -vvv --shell-job --tcp-established -d -o ${CHECKPOINT_DIR}/restore.log

@@ -1,16 +1,20 @@
+CONTROLLER_DIR = ../../controller
+LOAD_BALANCER_DIR = ../../load_balancer
+TCP_DIR = ../../tcp
+
 all:
 
 compile:
-	cd /home/p4/p4containerflow/load_balancer && make
+	cd $(LOAD_BALANCER_DIR) && make
 
 control_multi_switch:
-	cd /home/p4/p4containerflow/controller && sleep 2 && ./controller.py --multi_switch=True
+	cd $(CONTROLLER_DIR) && sleep 2 && ./controller.py --multi_switch=True
 
 control:
-	cd /home/p4/p4containerflow/controller && sleep 2 && ./controller.py
+	cd $(CONTROLLER_DIR) && sleep 2 && ./controller.py
 
 images:
-	cd /home/p4/p4containerflow/tcp && make
+	cd $(TCP_DIR) && make
 
 tcp-client:
 	sudo podman run -it --rm --replace --name tcp-client --pod h1-pod tcp-client
