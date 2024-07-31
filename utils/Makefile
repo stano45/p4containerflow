@@ -5,7 +5,7 @@ TCP_DIR = ../../tcp
 all:
 
 compile:
-	cd $(LOAD_BALANCER_DIR) && make
+	make -C $(LOAD_BALANCER_DIR)
 
 control_multi_switch:
 	cd $(CONTROLLER_DIR) && sleep 2 && ./controller.py --multi_switch=True
@@ -14,7 +14,7 @@ control:
 	cd $(CONTROLLER_DIR) && sleep 2 && ./controller.py
 
 images:
-	cd $(TCP_DIR) && make
+	make -C $(TCP_DIR)
 
 tcp-client:
 	sudo podman run -it --rm --replace --name tcp-client --pod h1-pod tcp-client
