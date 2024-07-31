@@ -1,4 +1,4 @@
-include ../../Makefile
+include ../../utils/Makefile
 
 all: compile build control
 
