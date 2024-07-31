@@ -1,4 +1,4 @@
-include ../../Makefile
+include ../../utils/Makefile
 SHELL := /bin/bash
 
 all: compile build control_multi_switch

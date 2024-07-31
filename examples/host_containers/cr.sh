@@ -25,7 +25,7 @@ sudo mkdir -p $CHECKPOINT_DIR
 sudo podman container checkpoint --export $CHECKPOINT_PATH --compress none --keep --tcp-established $SOURCE_HOST
 sudo podman rm -f $SOURCE_HOST
 
-sudo /home/p4/p4containerflow/scripts/edit_files_img.py $CHECKPOINT_PATH $SOURCE_IP $TARGET_IP
+sudo ../../scripts/edit_files_img.py $CHECKPOINT_PATH $SOURCE_IP $TARGET_IP
 
 sudo podman container restore --import $CHECKPOINT_PATH --keep --tcp-established --ignore-static-ip --ignore-static-mac --pod ${TARGET_HOST}-pod
 # --name cannot be used with --tcp-established on restore

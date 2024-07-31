@@ -33,7 +33,7 @@ This project uses the P4Runtime API to communicate with the switch. The P4Runtim
 
 When installing PI, make sure to configure with the `--with-proto` flag to compile proto files and `--with-python_prefix=/path/to/this/repo/.venv` to install the p4 library in your virtual environment. For example:
 ```bash
-./configure --with-proto --with-python_prefix=/home/p4/p4containerflow/.venv
+./configure --with-proto --with-python_prefix=/absolute/path/to/p4containerflow/.venv
 ```
 After running:
 ```bash

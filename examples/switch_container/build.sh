@@ -66,7 +66,7 @@ sudo podman run -d \
     --privileged \
     --replace \
     --network host \
-    -v /home/p4/p4containerflow/examples/switch_container/s1.sh:/s1.sh \
-    -v /home/p4/p4containerflow/load_balancer/build/load_balance.json:/load_balance.json \
+    -v ../../examples/switch_container/s1.sh:/s1.sh \
+    -v ../../load_balancer/build/load_balance.json:/load_balance.json \
     --entrypoint /s1.sh \
     p4c
