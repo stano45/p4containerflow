@@ -1,13 +1,15 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
+
 	"github.com/go-redis/redis/v8"
-	"context"
-	"encoding/json"
 )
 
 type Server struct {
@@ -32,13 +34,32 @@ func (s *Server) getData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	info, err := s.RedisClient.Info(ctx).Result()
+	if err != nil {
+		http.Error(w, "Error fetching Redis info", http.StatusInternalServerError)
+		return
+	}
+
+	uptime := parseRedisUptime(info)
+
 	response := map[string]string{
-		"key":   key,
-		"value": val,
+		"key":    key,
+		"value":  val,
+		"uptime": uptime,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func parseRedisUptime(info string) string {
+	lines := strings.Split(info, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "uptime_in_seconds") {
+			return strings.TrimSpace(strings.Split(line, ":")[1])
+		}
+	}
+	return "unknown"
 }
 
 func main() {
