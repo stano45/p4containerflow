@@ -49,6 +49,9 @@ def main(config_file_path):
             raise Exception(
                 "No master switch specified in the configuration file."
             )
+        lb_nodes = master_config.get("lb_nodes", None)
+        if not lb_nodes:
+            raise Exception("No load balancer IP addresses specified.")
 
         master_controller = SwitchController(
             p4info_file_path=master_config["p4info_file_path"],
@@ -59,8 +62,11 @@ def main(config_file_path):
             proto_dump_file=master_config["proto_dump_file"],
             initial_table_rules_file=master_config["runtime_file"],
         )
+
         global nodeManager
-        nodeManager = NodeManager(master_controller)
+        nodeManager = NodeManager(
+            switch_controller=master_controller, lb_nodes=lb_nodes
+        )
 
     except KeyboardInterrupt:
         print("Shutting down.")
