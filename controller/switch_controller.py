@@ -4,8 +4,8 @@ import json
 
 import p4runtime_lib.bmv2
 import p4runtime_lib.helper
-from p4runtime_lib.switch import ShutdownAllSwitchConnections
 from p4runtime_lib.simple_controller import program_from_file
+from p4runtime_lib.switch import ShutdownAllSwitchConnections
 
 
 class SwitchController(object):
@@ -19,6 +19,14 @@ class SwitchController(object):
         proto_dump_file,
         initial_table_rules_file=None,
     ):
+        self.p4info_file_path = p4info_file_path
+        self.bmv2_file_path = bmv2_file_path
+        self.sw_name = sw_name
+        self.sw_addr = sw_addr
+        self.sw_id = sw_id
+        self.proto_dump_file = proto_dump_file
+        self.initial_table_rules_file = initial_table_rules_file
+
         self.p4info_helper = p4runtime_lib.helper.P4InfoHelper(
             p4info_file_path
         )

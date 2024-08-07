@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import os
 import sys
 
@@ -13,68 +14,61 @@ app = Flask(__name__)
 global nodeManager
 
 
-def main(p4info_file_path, bmv2_file_path, multi_switch=False):
+def main(config_file_path):
     try:
-        if multi_switch:
-            # Program switches
-            # s2
-            SwitchController(
-                p4info_file_path=p4info_file_path,
-                bmv2_file_path=bmv2_file_path,
-                sw_name="s2",
-                sw_addr="127.0.0.1:50052",
-                sw_id=1,
-                proto_dump_file=(
-                    "../load_balancer/logs/s2-p4runtime-requests.txt"
-                ),
-                initial_table_rules_file="../load_balancer/s2-runtime.json",
+        with open(config_file_path, "r") as config_file:
+            switch_configs = json.load(config_file)
+
+        switch_controllers = []
+        master_config = None
+
+        for config in switch_configs:
+            # Master needs to be initialized last,
+            # otherwise performing master arbitration update will fail
+            if config.get("master", False):
+                if master_config is not None:
+                    raise Exception(
+                        "Multiple master switches specified "
+                        "in the configuration file."
+                    )
+                master_config = config
+                continue
+
+            switch_controller = SwitchController(
+                p4info_file_path=config["p4info_file_path"],
+                bmv2_file_path=config["bmv2_file_path"],
+                sw_name=config["name"],
+                sw_addr=config["addr"],
+                sw_id=config["id"],
+                proto_dump_file=config["proto_dump_file"],
+                initial_table_rules_file=config["runtime_file"],
+            )
+            switch_controllers.append(switch_controller)
+
+        if master_config is None:
+            raise Exception(
+                "No master switch specified in the configuration file."
             )
 
-            # s3
-            SwitchController(
-                p4info_file_path=p4info_file_path,
-                bmv2_file_path=bmv2_file_path,
-                sw_name="s3",
-                sw_addr="127.0.0.1:50053",
-                sw_id=2,
-                proto_dump_file=(
-                    "../load_balancer/logs/s3-p4runtime-requests.txt"
-                ),
-                initial_table_rules_file="../load_balancer/s3-runtime.json",
-            )
-
-            # s4 (no path to this switch from s1)
-            SwitchController(
-                p4info_file_path=p4info_file_path,
-                bmv2_file_path=bmv2_file_path,
-                sw_name="s4",
-                sw_addr="127.0.0.1:50054",
-                sw_id=3,
-                proto_dump_file=(
-                    "../load_balancer/logs/s4-p4runtime-requests.txt"
-                ),
-                initial_table_rules_file="../load_balancer/s4-runtime.json",
-            )
-
-        # s1
-        # s1 needs to be last so that this controller is set
-        # as master (otherwise write operations won't work)
-        switch_controller = SwitchController(
-            p4info_file_path=p4info_file_path,
-            bmv2_file_path=bmv2_file_path,
-            sw_name="s1",
-            sw_addr="0.0.0.0:50051",
-            sw_id=0,
-            proto_dump_file="../load_balancer/logs/s1-p4runtime-requests.txt",
-            initial_table_rules_file="../load_balancer/s1-runtime.json",
+        master_controller = SwitchController(
+            p4info_file_path=master_config["p4info_file_path"],
+            bmv2_file_path=master_config["bmv2_file_path"],
+            sw_name=master_config["name"],
+            sw_addr=master_config["addr"],
+            sw_id=master_config["id"],
+            proto_dump_file=master_config["proto_dump_file"],
+            initial_table_rules_file=master_config["runtime_file"],
         )
         global nodeManager
-        nodeManager = NodeManager(switch_controller)
+        nodeManager = NodeManager(master_controller)
 
     except KeyboardInterrupt:
         print("Shutting down.")
     except grpc.RpcError as e:
         printGrpcError(e)
+        exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
         exit(1)
 
     app.run(port=5000)
@@ -121,42 +115,16 @@ def update_node():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="P4Runtime Controller")
     parser.add_argument(
-        "--p4info",
-        help="p4info proto in text format from p4c",
+        "--config",
+        help="JSON configuration file for switches",
         type=str,
         action="store",
-        required=False,
-        default="../load_balancer/build/load_balance.p4.p4info.txt",
-    )
-    parser.add_argument(
-        "--bmv2-json",
-        help="BMv2 JSON file from p4c",
-        type=str,
-        action="store",
-        required=False,
-        default="../load_balancer/build/load_balance.json",
-    )
-    parser.add_argument(
-        "--multi_switch",
-        help="BMv2 JSON file from p4c",
-        type=bool,
-        action="store",
-        required=False,
-        default=False,
+        required=True,
     )
     args = parser.parse_args()
 
-    if not os.path.exists(args.p4info):
+    if not os.path.exists(args.config):
         parser.print_help()
-        print(
-            "\np4info file not found: %s\nHave you run 'make'?" % args.p4info
-        )
+        print(f"\nConfiguration file not found: {args.config}")
         parser.exit(1)
-    if not os.path.exists(args.bmv2_json):
-        parser.print_help()
-        print(
-            "\nBMv2 JSON file not found: %s\nHave you run 'make'?"
-            % args.bmv2_json
-        )
-        parser.exit(1)
-    main(args.p4info, args.bmv2_json, args.multi_switch)
+    main(args.config)
