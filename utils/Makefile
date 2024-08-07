@@ -1,4 +1,3 @@
-CONTROLLER_DIR = ../../controller
 LOAD_BALANCER_DIR = ../../load_balancer
 TCP_DIR = ../../tcp
 
@@ -6,12 +5,6 @@ all:
 
 compile:
 	make -C $(LOAD_BALANCER_DIR)
-
-control_multi_switch:
-	cd $(CONTROLLER_DIR) && sleep 2 && ./controller.py --multi_switch=True
-
-control:
-	cd $(CONTROLLER_DIR) && sleep 2 && ./controller.py
 
 images:
 	make -C $(TCP_DIR)
