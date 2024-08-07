@@ -18,4 +18,7 @@ netcat-client:
 iperf-client:
 	sudo podman run -it --rm --replace --name iperf-client --pod h1-pod docker.io/networkstatic/iperf3 -4 -c 10.0.1.10 -p 12345 -t 30
 
+curl:
+	watch sudo podman run --pod h1-pod -it --rm --replace --name curl-client --pod h1-pod docker.io/curlimages/curl localhost:8080/get?key=counter
+
 .PHONY: all net compile control clean build-images tcp-client netcat-client iperf-client
