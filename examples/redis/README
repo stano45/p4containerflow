@@ -32,17 +32,21 @@ You should see the counter value being fetched every second.
 
 To migrate the container from the source host to the target host, and update the switch accordingly, run:
 ```bash
-make migrate SOURCE=<> TARGET=<>
+make migrate SOURCE=2 TARGET=3
 ``` 
+You should see no change in the counter value being fetched every second. However, the Redis instance is now running on Host 3. You can verify this by running:
+```bash
+sudo podman ps
+```
+and 
+```bash
+sudo podman logs -f h2 # Nothing should be printed
+sudo podman logs -f h3 # You should see the Redis logs
+```
 
 To cleanup the topology, networks, pods, and containers, run:
 ```bash
 make clean
-```
-
-To show logs of a given container, run:
-```bash
-sudo podman logs -f <host_id>
 ```
 
 To show logs of the switch, run:
