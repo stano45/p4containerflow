@@ -1,30 +1,24 @@
 #!/bin/bash
 
-NUM_HOSTS=3
-
-# Container image and arguments
-REDIS_IMG="docker.io/redis:latest"
-REDIS_ARGS=""
-
-
-# Host 1
+# Host 1 (redis-app, redis-producer, and later redis-client - manually)
 printf "\n-----Creating host 1-----\n"
 sudo podman network create --driver bridge --opt isolate=1 --disable-dns --interface-name h1-br --gateway 10.0.1.10 --subnet 10.0.1.0/24 h1-net
 sudo podman pod create --name h1-pod --network h1-net --mac-address 08:00:00:00:01:01 --ip 10.0.1.1
 sudo podman run --replace --detach --privileged --name redis-app --pod h1-pod --cap-add NET_ADMIN redis-app
 sudo podman run --replace --detach --privileged --name redis-producer --pod h1-pod --cap-add NET_ADMIN redis-producer
 
-# Host 2
+# Host 2 (redis)
 printf "\n-----Creating host 2-----\n"
 sudo podman network create --driver bridge --opt isolate=1 --disable-dns --interface-name h2-br --gateway 10.0.2.20 --route 10.0.1.0/24,10.0.2.20 --subnet 10.0.2.0/24 h2-net
 sudo podman pod create --name h2-pod --network h2-net --mac-address 08:00:00:00:02:02 --ip 10.0.2.2
-sudo podman run --replace --detach --privileged --name h2 --pod h2-pod --cap-add NET_ADMIN $REDIS_IMG $REDIS_ARGS
+sudo podman run --replace --detach --privileged --name h2 --pod h2-pod --cap-add NET_ADMIN docker.io/redis:latest
 
-# Host 3
+# Host 3 (initially no containers, the redis container will be migrated here)
 printf "\n-----Creating host 3-----\n"
 sudo podman network create --driver bridge  --opt isolate=1 --disable-dns --interface-name h3-br --gateway 10.0.3.30 --route 10.0.1.0/24,10.0.3.30 --subnet 10.0.3.0/24 h3-net
 sudo podman pod create --name h3-pod --network h3-net --mac-address 08:00:00:00:03:03 --ip 10.0.3.3
-sudo podman run --replace --detach --privileged --name h3 --pod h3-pod --cap-add NET_ADMIN $REDIS_IMG $REDIS_ARGS
+# The hello-world container is started so that the network interfaces are brought up
+sudo podman run --replace --detach --name h3-pause --pod h3-pod docker.io/hello-world:latest
 
 
 # Configure interfaces
@@ -49,8 +43,6 @@ printf "Interface: %s\n" $iface
     sudo ip link set $iface mtu 9500
 done
 
-sudo podman kill h3
-sudo podman rm -f h3
 
 # Switch
 printf "\n-----Creating switch-----\n"
