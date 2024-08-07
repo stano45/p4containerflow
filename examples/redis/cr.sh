@@ -30,8 +30,7 @@ sudo podman rm -f $SOURCE_HOST
 # Edit the checkpoint files with new IP
 sudo ../../scripts/edit_files_img.py $CHECKPOINT_PATH $SOURCE_IP $TARGET_IP
 
-# Kill and remove the target container
-sudo podman container kill ${TARGET_HOST}
+# Remove the target container
 sudo podman container rm -f ${TARGET_HOST}
 
 # Restore the container with new settings

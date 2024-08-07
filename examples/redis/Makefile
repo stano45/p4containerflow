@@ -1,6 +1,6 @@
 include ../../utils/Makefile
 
-all: app producer compile build controller
+all: build-app build-producer build-client compile build controller
 
 build: clean
 	./build.sh
@@ -18,13 +18,16 @@ migrate:
 		./cr.sh ${SOURCE} ${TARGET}; \
 	fi
 
-app:
+build-app:
 	sudo podman build -t redis-app -f app/Containerfile app
 
-producer:
+build-producer:
 	sudo podman build -t redis-producer -f producer/Containerfile producer
 
-client:
-	watch -n 1 sudo podman run --pod h1-pod -it --rm --replace --name redis-client --pod h1-pod docker.io/curlimages/curl localhost:8080/get?key=counter
+build-client:
+	sudo podman build -t redis-client -f client/Containerfile client
 
-.PHONY: all terminals build controller clean migrate h1 h2 h3 h4 app producer client
+client:
+	sudo podman run --name redis-client --pod h1-pod --rm --replace -it redis-client	
+
+.PHONY: all terminals build controller clean migrate h1 h2 h3 h4 build-app build-producer build-client client
