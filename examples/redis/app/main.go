@@ -40,22 +40,25 @@ func (s *Server) getData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uptime := parseRedisUptime(info)
+	uptime := parseFromInfo(info, "uptime_in_seconds")
+	connectedClients := parseFromInfo(info, "connected_clients")
+
 
 	response := map[string]string{
 		"key":    key,
 		"value":  val,
 		"uptime": uptime,
+		"connected_clients": connectedClients,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
-func parseRedisUptime(info string) string {
+func parseFromInfo(info string, target string) string {
 	lines := strings.Split(info, "\n")
 	for _, line := range lines {
-		if strings.HasPrefix(line, "uptime_in_seconds") {
+		if strings.HasPrefix(line, target) {
 			return strings.TrimSpace(strings.Split(line, ":")[1])
 		}
 	}
