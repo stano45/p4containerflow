@@ -1,8 +1,6 @@
 include ../../utils/Makefile
 
-all: compile build controller
-
-terminals: h1 h2 h3 h4
+all: app producer compile build controller
 
 build: clean
 	./build.sh
@@ -20,22 +18,13 @@ migrate:
 		./cr.sh ${SOURCE} ${TARGET}; \
 	fi
 
-redis-app:
+app:
 	sudo podman build -t redis-app -f app/Containerfile app
 
 producer:
 	sudo podman build -t redis-producer -f producer/Containerfile producer
 
-h1:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h1" -hold -e "sudo podman rm -f tcp-client && sudo podman run --name tcp-client --pod h1-pod tcp-client" &
+client:
+	watch -n 1 sudo podman run --pod h1-pod -it --rm --replace --name redis-client --pod h1-pod docker.io/curlimages/curl localhost:8080/get?key=counter
 
-h2:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h2" -hold -e "sudo podman logs -f h2" &
-
-h3:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h3" -hold -e "sudo podman logs -f h3" &
-
-h4:
-	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "sudo podman logs -f h4" &
-
-.PHONY: all terminals build controller clean migrate h1 h2 h3 h4 redis-app producer
+.PHONY: all terminals build controller clean migrate h1 h2 h3 h4 app producer client
