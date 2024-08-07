@@ -8,6 +8,9 @@
     "p4info_file_path": "../../load_balancer/build/load_balance.p4.p4info.txt",
     "bmv2_file_path": "../../load_balancer/build/load_balance.json",
     "master": true,
-    "lb_nodes": [{ "ip": "10.0.2.2", "mac": "08:00:00:00:02:02", "port": 2 }]
+    "lb_nodes": [
+      { "ip": "10.0.2.2", "mac": "08:00:00:00:02:02", "port": 2 },
+      { "ip": "10.0.3.3", "mac": "08:00:00:00:03:03", "port": 3 }
+    ]
   }
 ]
