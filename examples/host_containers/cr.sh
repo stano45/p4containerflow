@@ -6,6 +6,8 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
+set -xe
+
 # Assigning arguments to variables
 SOURCE_IDX=$1
 TARGET_IDX=$2

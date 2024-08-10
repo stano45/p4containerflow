@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -xe
+
 BUILD_DIR=../../load_balancer/build
 PCAP_DIR=../../load_balancer/pcaps
 LOG_DIR=../../load_balancer/logs
@@ -93,7 +96,7 @@ printf "Interface: %s\n" $iface
     sudo ethtool -K $iface tx off
     sudo ethtool -K $iface rx off
     sudo ethtool -K $iface sg off
-    
+
     # Set the MTU of these interfaces to be larger than default of
     # 1500 bytes, so that P4 behavioral-model testing can be done
     # on jumbo frames.
