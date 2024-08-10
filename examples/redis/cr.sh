@@ -28,7 +28,8 @@ sudo podman container checkpoint --ignore-volumes --export $CHECKPOINT_PATH --co
 sudo podman rm -f $SOURCE_HOST
 
 # Edit the checkpoint files with new IP
-sudo ../../scripts/edit_files_img.py $CHECKPOINT_PATH $SOURCE_IP $TARGET_IP
+# -E env PATH=$PATH is used to keep crit in the PATH
+sudo -E env PATH=$PATH ../../scripts/edit_files_img.py $CHECKPOINT_PATH $SOURCE_IP $TARGET_IP
 
 # Remove the target container
 sudo podman container rm -f ${TARGET_HOST}
