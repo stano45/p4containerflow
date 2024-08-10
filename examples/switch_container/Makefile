@@ -1,11 +1,15 @@
 include ../../utils/Makefile
 
-all: compile build control
+all: compile build controller
 
 terminals: h1 h2 h3 h4
 
 build: clean
 	./build.sh
+
+# Sleep for 2 seconds to allow the switches to start
+controller:
+	sleep 2 && ../../controller/controller.py --config config/switches.json
 
 clean:
 	./clean.sh
@@ -29,4 +33,4 @@ h3:
 h4:
 	xterm -xrm 'XTerm.vt100.allowTitleOps: false' -T "h4" -hold -e "sudo podman logs -f h4" &
 
-.PHONY: all terminals build clean migrate h1 h2 h3 h4
+.PHONY: all terminals build controller clean migrate h1 h2 h3 h4

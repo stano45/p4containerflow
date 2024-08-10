@@ -1,0 +1,42 @@
+[
+  {
+    "id": 0,
+    "name": "s1",
+    "addr": "0.0.0.0:50051",
+    "proto_dump_file": "../../load_balancer/logs/s1-p4runtime-requests.txt",
+    "runtime_file": "./config/s1-runtime.json",
+    "p4info_file_path": "../../load_balancer/build/load_balance.p4.p4info.txt",
+    "bmv2_file_path": "../../load_balancer/build/load_balance.json",
+    "master": true
+  },
+  {
+    "id": 1,
+    "name": "s2",
+    "addr": "127.0.0.1:50052",
+    "proto_dump_file": "../../load_balancer/logs/s2-p4runtime-requests.txt",
+    "runtime_file": "./config/s2-runtime.json",
+    "p4info_file_path": "../../load_balancer/build/load_balance.p4.p4info.txt",
+    "bmv2_file_path": "../../load_balancer/build/load_balance.json",
+    "master": false
+  },
+  {
+    "id": 2,
+    "name": "s3",
+    "addr": "127.0.0.1:50053",
+    "proto_dump_file": "../../load_balancer/logs/s3-p4runtime-requests.txt",
+    "runtime_file": "./config/s3-runtime.json",
+    "p4info_file_path": "../../load_balancer/build/load_balance.p4.p4info.txt",
+    "bmv2_file_path": "../../load_balancer/build/load_balance.json",
+    "master": false
+  },
+  {
+    "id": 3,
+    "name": "s4",
+    "addr": "127.0.0.1:50054",
+    "proto_dump_file": "../../load_balancer/logs/s4-p4runtime-requests.txt",
+    "runtime_file": "./config/s4-runtime.json",
+    "p4info_file_path": "../../load_balancer/build/load_balance.p4.p4info.txt",
+    "bmv2_file_path": "../../load_balancer/build/load_balance.json",
+    "master": false
+  }
+]

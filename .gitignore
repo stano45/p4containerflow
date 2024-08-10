@@ -6,7 +6,6 @@
 *~
 
 # Compiled JSON
-*.json
 !*p4app.json
 !topology.json
 !*-runtime.json
