@@ -54,4 +54,4 @@ sudo podman run -d \
     -v ../../examples/switch_container/s1.sh:/s1.sh \
     -v ../../load_balancer/build/load_balance.json:/load_balance.json \
     --entrypoint /s1.sh \
-    p4c
+    docker.io/p4lang/p4c
