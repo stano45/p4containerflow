@@ -20,6 +20,9 @@ sudo podman pod create --name h3-pod --network h3-net --mac-address 08:00:00:00:
 # The hello-world container is started so that the network interfaces are brought up
 sudo podman run --replace --detach --name h3-pause --pod h3-pod docker.io/hello-world:latest
 
+sudo iptables -A OUTPUT -p tcp --tcp-flags RST RST -o h1-br -j DROP
+sudo iptables -A OUTPUT -p tcp --tcp-flags RST RST -o h2-br -j DROP
+sudo iptables -A OUTPUT -p tcp --tcp-flags RST RST -o h3-br -j DROP
 
 # Configure interfaces
 printf "\n-----Configuring interfaces-----\n"
@@ -55,3 +58,4 @@ sudo podman run -d \
     -v ../../load_balancer/build/load_balance.json:/load_balance.json \
     --entrypoint /s1.sh \
     docker.io/p4lang/p4c
+    
