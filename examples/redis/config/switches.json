@@ -1,0 +1,13 @@
+[
+  {
+    "id": 0,
+    "name": "s1",
+    "addr": "0.0.0.0:50051",
+    "proto_dump_file": "../../load_balancer/logs/s1-p4runtime-requests.txt",
+    "runtime_file": "config/s1-runtime.json",
+    "p4info_file_path": "../../load_balancer/build/load_balance.p4.p4info.txt",
+    "bmv2_file_path": "../../load_balancer/build/load_balance.json",
+    "master": true,
+    "lb_nodes": [{ "ip": "10.0.2.2", "mac": "08:00:00:00:02:02", "port": 2 }]
+  }
+]

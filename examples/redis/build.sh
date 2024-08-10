@@ -1,45 +1,32 @@
 #!/bin/bash
 
-NUM_HOSTS=4
-
-# Container image and arguments
-IMG="tcp-server"
-ARGS=""
-
-# IMG="docker.io/networkstatic/iperf3"
-# ARGS="-4 -s -p 12345"
-
-# IMG="docker.io/subfuzion/netcat"
-# ARGS="-4 -v -l -p 12345"
-
-# Host 1
+# Host 1 (redis-app, redis-producer, and later redis-client - manually)
 printf "\n-----Creating host 1-----\n"
 sudo podman network create --driver bridge --opt isolate=1 --disable-dns --interface-name h1-br --gateway 10.0.1.10 --subnet 10.0.1.0/24 h1-net
 sudo podman pod create --name h1-pod --network h1-net --mac-address 08:00:00:00:01:01 --ip 10.0.1.1
-sudo podman run --detach --privileged --name h1 --pod h1-pod --cap-add NET_ADMIN $IMG $ARGS
+sudo podman run --replace --detach --privileged --name redis-app --pod h1-pod --cap-add NET_ADMIN redis-app
+sudo podman run --replace --detach --privileged --name redis-producer --pod h1-pod --cap-add NET_ADMIN redis-producer
 
-# Host 2
+# Host 2 (redis)
 printf "\n-----Creating host 2-----\n"
 sudo podman network create --driver bridge --opt isolate=1 --disable-dns --interface-name h2-br --gateway 10.0.2.20 --route 10.0.1.0/24,10.0.2.20 --subnet 10.0.2.0/24 h2-net
 sudo podman pod create --name h2-pod --network h2-net --mac-address 08:00:00:00:02:02 --ip 10.0.2.2
-sudo podman run --detach --privileged --name h2 --pod h2-pod --cap-add NET_ADMIN $IMG $ARGS
+sudo podman run --replace --detach --privileged --name h2 --pod h2-pod --cap-add NET_ADMIN docker.io/redis:latest
 
-# Host 3
+# Host 3 (initially no containers, the redis container will be migrated here)
 printf "\n-----Creating host 3-----\n"
 sudo podman network create --driver bridge  --opt isolate=1 --disable-dns --interface-name h3-br --gateway 10.0.3.30 --route 10.0.1.0/24,10.0.3.30 --subnet 10.0.3.0/24 h3-net
 sudo podman pod create --name h3-pod --network h3-net --mac-address 08:00:00:00:03:03 --ip 10.0.3.3
-sudo podman run --detach --privileged --name h3 --pod h3-pod --cap-add NET_ADMIN $IMG $ARGS
+# The hello-world container is started so that the network interfaces are brought up
+sudo podman run --replace --detach --name h3-pause --pod h3-pod docker.io/hello-world:latest
 
-# Host 4
-printf "\n-----Creating host 4-----\n"
-sudo podman network create --driver bridge --opt isolate=1 --disable-dns --interface-name h4-br --gateway 10.0.4.40 --route 10.0.1.0/24,10.0.4.40 --subnet 10.0.4.0/24 h4-net
-sudo podman pod create --name h4-pod --network h4-net --mac-address 08:00:00:00:04:04 --ip 10.0.4.4
-sudo podman run --detach --privileged --name h4 --pod h4-pod --cap-add NET_ADMIN $IMG $ARGS
-
+sudo iptables -A OUTPUT -p tcp --tcp-flags RST RST -o h1-br -j DROP
+sudo iptables -A OUTPUT -p tcp --tcp-flags RST RST -o h2-br -j DROP
+sudo iptables -A OUTPUT -p tcp --tcp-flags RST RST -o h3-br -j DROP
 
 # Configure interfaces
 printf "\n-----Configuring interfaces-----\n"
-interfaces=(h1-br h2-br h3-br h4-br)
+interfaces=(h1-br h2-br h3-br)
 for iface in "${interfaces[@]}"; do
 printf "Interface: %s\n" $iface
     # Disable IPv6 on the interfaces, so that the Linux kernel
@@ -59,6 +46,7 @@ printf "Interface: %s\n" $iface
     sudo ip link set $iface mtu 9500
 done
 
+
 # Switch
 printf "\n-----Creating switch-----\n"
 sudo podman run -d \
@@ -70,3 +58,4 @@ sudo podman run -d \
     -v ../../load_balancer/build/load_balance.json:/load_balance.json \
     --entrypoint /s1.sh \
     docker.io/p4lang/p4c
+    
