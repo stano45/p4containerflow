@@ -8,6 +8,7 @@ terminals: h1 h2 h3 h4
 build: clean
 	./build.sh
 
+# Sleep for 2 seconds to allow the switches to start
 controller:
 	sleep 2 && ../../controller/controller.py --config config/switches.json
 
