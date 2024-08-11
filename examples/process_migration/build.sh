@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -xe
+
 BUILD_DIR=../../load_balancer/build
 PCAP_DIR=../../load_balancer/pcaps
 LOG_DIR=../../load_balancer/logs
@@ -29,7 +31,7 @@ for iface in "${interfaces[@]}"; do
     sudo ethtool -K $iface tx off
     sudo ethtool -K $iface rx off
     sudo ethtool -K $iface sg off
-    
+
     # Set the MTU of these interfaces to be larger than default of
     # 1500 bytes, so that P4 behavioral-model testing can be done
     # on jumbo frames.
@@ -45,7 +47,7 @@ sudo ip link set dev s2-eth1 address 00:00:00:02:01:00
 sudo ip addr add 10.0.2.20/24 dev s2-eth1
 sudo ip link set dev s2-eth2 address 00:00:00:02:02:00
 sudo ip link set dev s3-eth1 address 00:00:00:03:01:00
-sudo ip addr add 10.0.3.30/24 dev s3-eth1 
+sudo ip addr add 10.0.3.30/24 dev s3-eth1
 sudo ip link set dev s3-eth2 address 00:00:00:03:02:00
 sudo ip link set dev s4-eth1 address 00:00:00:04:01:00
 sudo ip addr add 10.0.4.40/24 dev s4-eth1
