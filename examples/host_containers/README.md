@@ -24,7 +24,7 @@ make netcat-client
 To migrate the container from the source host to the target host, and update the switch accordingly, run:
 ```bash
 make migrate SOURCE=<> TARGET=<>
-``` 
+```
 
 To cleanup the topology, networks, pods, and containers, run:
 ```bash
@@ -41,3 +41,11 @@ To show logs of e.g. the s1 switch, run:
 tail -f ../../load_balancer/logs/s1.log
 ```
 
+## Troubleshooting
+
+This example requires Podman version 5.2.0 or newer, which includes a [patch](https://github.com/containers/podman/pull/23056)
+that enables container restore into a Pod.
+
+```
+Error: cannot add container f96670b26e53e70f7f451191ea39a093c940c6c48b47218aeeef1396cb860042 to pod h2-pod: no such pod
+```
