@@ -13,7 +13,7 @@ elif [ "$#" -ne 3 ]; then
 	exit 1
 fi
 
-curl --insecure \
+sudo curl --insecure \
 	--cert /var/lib/kubelet/pki/kubelet-client-current.pem \
 	--key /var/lib/kubelet/pki/kubelet-client-current.pem \
 	-X POST \
