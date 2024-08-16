@@ -1,0 +1,21 @@
+#!/bin/bash
+
+HOST="$1"
+POD="$2"
+CTR="$3"
+
+if [ "$#" -eq 2 ]; then
+	HOST=localhost
+	POD="$1"
+	CTR="$2"
+elif [ "$#" -ne 3 ]; then
+	echo "Usage: $(basename $0) <pod> <container>"
+	exit 1
+fi
+
+curl --insecure \
+	--cert /var/lib/kubelet/pki/kubelet-client-current.pem \
+	--key /var/lib/kubelet/pki/kubelet-client-current.pem \
+	-X POST \
+	"https://${HOST}:10250/checkpoint/default/${POD}/${CTR}"
+
