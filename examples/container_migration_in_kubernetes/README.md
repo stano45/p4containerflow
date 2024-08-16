@@ -73,8 +73,8 @@ sudo cp kubectl-plugin/kubectl-checkpoint /usr/local/bin/
 
 5. Enable checkpoint/restore with established TCP connections
 ```
-mkdir -p /etc/criu/
-echo "tcp-established" >> /etc/criu/runc.conf
+sudo mkdir -p /etc/criu/
+echo "tcp-established" | sudo tee -a /etc/criu/runc.conf
 ```
 
 6. Create container checkpoint
