@@ -20,6 +20,6 @@ echo
 escaped_password=$(escape_string "$password")
 
 # Generate the password file using podman and htpasswd
-podman pull httpd:2
+podman pull docker.io/library/httpd:2
 podman run --entrypoint htpasswd httpd:2 -Bbn "$user" "$escaped_password" > auth/htpasswd
 
