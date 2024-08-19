@@ -1,6 +1,8 @@
 # P4ContainerFlow
 
-This is the repository for the Google Summer of Code project [P4-Enabled Container Migration in Kubernetes](https://summerofcode.withgoogle.com/programs/2024/projects/sYbpOJhD). The project is actively being worked on.
+This is the repository for the Google Summer of Code project [P4-Enabled Container Migration in Kubernetes](https://summerofcode.withgoogle.com/programs/2024/projects/sYbpOJhD).
+
+For more information about the project, please refer to the [final report](REPORT.md).
 
 ## Table of Contents
 - [P4ContainerFlow](#p4containerflow)
