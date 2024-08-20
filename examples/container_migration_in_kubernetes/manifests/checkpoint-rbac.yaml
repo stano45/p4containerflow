@@ -1,0 +1,44 @@
+# When running the `kubectl checkpoint` command, you may see the following error:
+# Forbidden (user=system:node:<your_machine_name>, verb=create, resource=nodes, subresource=checkpoint)
+# This ClusterRole allows the create verb on the nodes resource and the nodes/checkpoint subresource.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: checkpoint-role
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["list", "get", "watch", "create"]
+  - apiGroups: [""]
+    resources: ["nodes/checkpoint"]
+    verbs: ["create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: checkpoint-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: checkpoint-role
+subjects:
+  - kind: User
+    # Replace <your_machine_name> with the name of your machine
+    name: system:node:<your_machine_name>
+    apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-router-checkpoint-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: checkpoint-role
+subjects:
+  - kind: ServiceAccount
+    name: kube-router
+    namespace: kube-system
