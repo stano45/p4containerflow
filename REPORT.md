@@ -22,6 +22,7 @@
     - [Containerizing hosts](#containerizing-hosts)
     - [Containerizing BMv2 switches](#containerizing-bmv2-switches)
     - [Redis container migration](#redis-container-migration)
+    - [The Kubernetes network model](#the-kubernetes-network-model)
     - [Initial Kubernetes integration](#initial-kubernetes-integration)
   - [Future Work](#future-work)
 
@@ -182,6 +183,28 @@ the uptime of the Redis instance does not reset, confirming the instance previou
 the connected clients count stays at 2, confirming both the app’s and producer’s TCP connections to the Redis DB have been preserved.
 
 
+### The Kubernetes network model
+
+Before we dive into the Kubernetes integration, it is important to understand the Kubernetes network model, and how load balancing is handled in practice.
+This is how Kubernetes networking is described in the [official documentation](https://kubernetes.io/docs/concepts/services-networking/):
+
+> Every Pod in a cluster gets its own unique cluster-wide IP address (one address per IP address family). This means you do not need to explicitly create links between Pods and you almost never need to deal with mapping container ports to host ports.
+This creates a clean, backwards-compatible model where Pods can be treated much like VMs or physical hosts from the perspectives of port allocation, naming, service discovery, load balancing, application configuration, and migration.
+
+This model is similar to what we have deployed in previous examples, where each pod was assigned a unique IP address, while the pod network interface is often a bridge.  However, the pod IP is allocated by Kubernetes. We will discuss the implications of this in the next section.
+
+Furthermore, it is important to understand how load balancing is handled in Kubernetes. As always, there are multiple options. Firstly, it is possible to create a `Service` of type `LoadBalancer`. The load balancer is implemented by the cloud provider and is usually a proprietary component, and it cannot be deployed locally without extra effort.
+
+Therefore, evaluated various open source solutions to Kubernetes  to assess how we can approach the integration of the BMv2 switch into the Kubernetes ecosystem.
+
+Firstly, we looked at [MetalLB](https://metallb.universe.tf/), which provides a load balancer implementation for bare metal clusters. Using MetalLB in layer 2 mode, all service traffic is routed to a single node, where `kube-proxy` spreads the traffic to pods. This model could be potentially extended by integrating a BMv2 switch running our P4 load load balancer program.
+
+Secondly, Kubernetes provides a Gateway API implementation that includes protocol-specific Route resources such as [TCPRoute](https://gateway-api.sigs.k8s.io/guides/tcp/) allowing to forward a TCP stream to a specified backend. Since this is similar to the goal of this project, a potential approach could be to modify this functionality to route traffic to a BMv2 switch.
+
+Lastly, it is possible to build a solution similar to [kube-router](https://github.com/cloudnativelabs/kube-router). The kube-router solution is deployed on the cluster as a `DaemonSet`, which means that all nodes run a copy of the pod (see the [Kubernetes docs](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) for more information). Kube-router uses the standard Linux networking stack (as discussed in a previous section), which makes it more straightforward to use than solutions using SDN or overlays.
+
+Because of the simplicity of the kube-router solution, and the potential ease of replacing it with a controller using the BMv2 software switch, we decided to first deploy kube-router, and then look at possibilites of replacing it with a custom solution.
+
 ### Initial Kubernetes integration
 Relevant PRs:
 - https://github.com/stano45/p4containerflow/pull/21
@@ -190,16 +213,16 @@ Relevant PRs:
 As a first step to start with the Kubernetes integration, we created a single-node cluster using kubeadm. To handle networking, we deployed a `DaemonSet` on the node running kube-router to load-balance traffic between pods. Furthermore, we deployed a simple `http-server` service, running in 2 pods. There is one container running in each pod, which accepts requests, holds them for a couple of seconds, and then sends a response.
 
 Migration within of a container running inside a Kubernetes pod requires multiple steps:
-Calling the kubelet checkpoint API to create a container checkpoint,
-Building a container image from the checkpoint,
-Pushing the container image to a container registry (local or hosted),
-Editing manifests to deploy this container image,
-Applying the manifest to restore the container.
+1. Calling the kubelet checkpoint API to create a container checkpoint,
+2. Building a container image from the checkpoint,
+3. Pushing the container image to a container registry (local or hosted),
+4. Editing manifests to deploy this container image,
+5. Applying the manifest to restore the container.
 
 However, there are multiple issues with this approach, which will need to be addressed in future development of the project:
-- Restoring a container with a new IP address in Kubernetes presents a "chicken or the egg" problem. In our approach, the checkpoint is modified with the new IP address (similar to `scripts/edit_files_img.py`), but Kubernetes allocates the IP address during restore.
-- The "Connection reset by peer" error always occurs after restore because checkpointing is performed for a container in a network namespace allocated to a Pod. There is no mechanism currently to prevent the Linux kernel from closing the TCP connection when a new packet is received from the client while the checkpointed container is not running.
-- The current checkpoint/restore mechanism in Kubernetes was primarily designed for forensic analysis and unsuitable for live migration. In particular, it takes significant time to create a checkpoint archive, upload it to a container registry, and restore the container in a new Pod. This results in significant downtime.
+1. Restoring a container with a new IP address in Kubernetes presents a "chicken or the egg" problem. In our approach, the checkpoint is modified with the new IP address (similar to `scripts/edit_files_img.py`), but Kubernetes allocates the IP address during restore. This could potentially be handled by running an [init container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) in the target pod to make Kubernetes assing an IP address before container restore.
+2. The "Connection reset by peer" error always occurs after restore because checkpointing is performed for a container in a network namespace allocated to a Pod. There is no mechanism currently to prevent the Linux kernel from closing the TCP connection when a new packet is received from the client while the checkpointed container is not running. This problem could be solved by attaching [CRIU action scripts](https://criu.org/Action_scripts) to [Kubernetes lifecycle events](https://kubernetes.io/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/) to lock the network and prevent the Kernel from sending a `RST` packet to the client.
+3. The current checkpoint/restore mechanism in Kubernetes was primarily designed for forensic analysis and unsuitable for live migration. In particular, it takes significant time to create a checkpoint archive, upload it to a container registry, and restore the container in a new Pod. This results in significant downtime. Within future work, there is room to optimize this process in multiple places.
 
 ## Future Work
 While this project presents multiple experiments showcasing container migration with established TCP connections, there is an additional effort required to utilize the P4 load balancer within Kubernetes. Specifically, the above-described example with kube-router should be modified to utilize a BMv2 switch for load balancing. This approach requires writing a Kubernetes controller that interacts with the BMv2 switch.
