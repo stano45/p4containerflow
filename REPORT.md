@@ -78,7 +78,7 @@ Next, we want to be able to change the hosts during runtime. We built a Python-b
 
 The controller also keeps track of the match-action table state, by a target IP -> index mapping. The index mapping corresponds to the value in the `ecmp_nhop` table. This makes it more efficient to look up the index of a specific IP in the table, without the need to fetch table state from the switch on each update request.
 
-<img src="assets/controller_light.png" alt="controller" width="500"/>
+<img src="assets/controller_light.png" alt="controller" width="600"/>
 
 
 During this stage, we faced minor issues:
@@ -119,7 +119,7 @@ Using netns, veth pairs, and the iproute2 suite to set MAC and IP addresses of v
 
 The following diagram shows the created topology, including the virtual interfaces:
 
-<img src="assets/linux_network_light.png" alt="controller" width="500"/>
+<img src="assets/linux_network_light.png" alt="controller" width="600"/>
 
 Setting up a complex virtual network topology is not straightforward. We outlined key challenges we faced during implementation:
 
@@ -135,7 +135,7 @@ Specifically, Podman uses the netavark backend for virtual networking. Each netw
 
 The following diagram shows the network topology of a single host and the connection of the network to a switch port:
 
-<img src="assets/container_interface_light.png" alt="container_interface" width="500"/>
+<img src="assets/container_interface_light.png" alt="container_interface" width="400"/>
 
 We wrote a script to create a network and a pod for each container. A pod is a group of containers with a shared IP address. This is also the case within the Kubernetes network model. We built a container image using the TCP server executable from the previous steps. Analogously, we built a client image. 
 
@@ -159,7 +159,7 @@ For simplicity, the switch container runs on the host network. The container ima
 
 The following diagram shows the network topology, which consists of 4 Podman networks interfaced by bridges, connected to a single BMv2 switch running in a container, but on the host network:
 
-<img src="assets/container_network_light.png" alt="container_interface" width="500"/>
+<img src="assets/container_network_light.png" alt="container_interface" width="400"/>
 
 
 ### Redis container migration
