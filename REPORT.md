@@ -74,7 +74,7 @@ Relevant PRs:
 - https://github.com/stano45/p4containerflow/pull/16
 - https://github.com/stano45/p4containerflow/pull/17 
 
-Next, we want to be able to change the hosts during runtime. We built a Python-based controller, utilizing the p4runtime library, and further Python utils from the [p4lang/tutorials](https://github.com/p4lang/tutorials) repository. Furthermore, we set up a simple flask HTTP server with three endpoints: `/insert_hop`, `/update_hop`, and `/delete_hop`. These endpoints insert, update, and delete entries in the `ecmp_nhop` table. 
+Next, we want to be able to change the hosts during runtime. We built a Python-based controller, utilizing the p4runtime library, and further Python utils from the [p4lang/tutorials](https://github.com/p4lang/tutorials) repository. Furthermore, we set up a simple flask HTTP server with three endpoints: `/insert_node`, `/update_node`, and `/delete_node`. These endpoints insert, update, and delete entries in the `ecmp_nhop` table. 
 
 The controller also keeps track of the match-action table state, by a target IP -> index mapping. The index mapping corresponds to the value in the `ecmp_nhop` table. This makes it more efficient to look up the index of a specific IP in the table, without the need to fetch table state from the switch on each update request.
 
