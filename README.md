@@ -63,5 +63,7 @@ There are three examples in the `examples` directory:
 - [process_migration](examples/process_migration): Process migration demo using network namespaces
 - [host_containers](examples/host_containers): Container migration demo using containerized hosts, but not switch
 - [switch_container](examples/switch_container): Container migration demo with all hosts and the switch containerized
+- [redis](examples/redis): Redis container migration demo using the [Redis](https://redis.io/) in-memory database
+- [container_migration_in_kubernetes](examples/container_migration_in_kubernetes): Container migration demo in Kubernetes
 
 Simply `cd` into the desired example directory and follow the instructions in the README.
