@@ -66,6 +66,7 @@ kubectl get service http-server
 ```
 
 ### 6. Apply the RBAC configuration to allow the checkpoint plugin to create a checkpoint (optional if your config already allows this):
+First, replace `<your_machine_name>` with the name of your machine. Then, run:
 ```
 kubectl apply -f manifests/checkpoint-rbac.yaml
 ```
