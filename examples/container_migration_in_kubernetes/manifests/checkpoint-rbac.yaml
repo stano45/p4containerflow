@@ -25,7 +25,8 @@ roleRef:
   name: checkpoint-role
 subjects:
   - kind: User
-    name: system:node:codingbeast
+    # Replace <your_machine_name> with the name of your machine
+    name: system:node:<your_machine_name>
     apiGroup: rbac.authorization.k8s.io
 
 ---
