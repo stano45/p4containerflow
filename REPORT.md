@@ -59,12 +59,12 @@ This project was implemented in small, incremental steps, from simple process mi
 Relevant PR: https://github.com/stano45/p4containerflow/pull/1
 
 The P4 organization already provides convenient scripts to build a virtual machine (VM) which includes all relevant P4 packages. This VM runs Ubuntu 24.04 and includes packages such as:
-The bmv2 software switch,
+The BMv2 software switch,
 The p4 compiler (p4c),
 mininet,
 p4runtime (python library for interacting with switches).
 
-Furthermore, we reused the load_balance exercise from the [p4lang/tutorials](https://github.com/p4lang/tutorials) repository. This is a simple load balancer, which hashes connections based on the source IP, source port, destination IP, destination port, and protocol into 2 buckets, which represent hosts. The output of this hash is 0 or 1, which is then used to index the target host using the `ecmp_nhop` table.
+Furthermore, we reused the load_balance exercise from the [p4lang/tutorials](https://github.com/p4lang/tutorials) repository. This is a simple load balancer, which hashes connections based on the source IP, source port, destination IP, destination port, and protocol into 2 buckets, which represent hosts. The output of this hash is 0 or 1, which is then used to index the target host (`h2` or `h3`) using the `ecmp_nhop` table.
 
 <img src="assets/simple_lb_light.png" alt="initial_lb" width="500"/>
 
@@ -94,8 +94,8 @@ Relevant PR: https://github.com/stano45/p4containerflow/pull/6
 At this point, we have a working load balancer that forwards traffic to one of two hosts. We are also able to update the load balancer node IPs using the controller. However, the load balancer in this state only supports traffic in the direction of the target hosts, while traffic from the hosts back to the client is not properly handled.
 
 To support TCP connections, the following needs to be adjusted:
-Rewrite the IP address of response packets. This is necessary, since the load balancer also has an IP address, and packets returning from target hosts would not be recognized as being a part of the same TCP connection.
-Re-compute the checksum for TCP packets, in addition to the IPv4 checksum.
+1. Rewrite the IP address of response packets. This is necessary, since the load balancer also has an IP address, and packets returning from target hosts would not be recognized as being a part of the same TCP connection.
+2. Recompute the checksum for TCP packets, in addition to the IPv4 checksum.
 
 Rewriting the source was relatively straightforward. Using p4’s match-action tables, we inserted an entry to the `ecmp_group` table, matching on the client’s IP (fixed at `10.0.1.1` in this example, [see code](https://github.com/stano45/p4containerflow/blob/a270c9bb9448d7952e0811c4d0636a79ee64113e/controller/switch_controller.py#L65)) and wrote an action to rewrite the source address to the switches’ IP ([see code](https://github.com/stano45/p4containerflow/blob/4846084c3239aeeac9944526f0bd917a79c8aa0f/load_balancer/load_balance.p4#L124)). 
 
@@ -116,7 +116,7 @@ A network namespace is a fundamental building block of Linux networking that all
 
 Virtual ethernet pairs can be used to create virtual interfaces, and automatically link them together. It is possible to “place” one half of the pair inside a network namespace, to simulate a link to a separate network. The other half of the veth pair acts as a gateway for the network living in the namespace.
 
-Using netns, veth pairs, and the iproute2 suite to set MAC and IP addresses of virtual interfaces, we rebuilt the mininet topology on the Linux Networking Stack. This is done in the form of bash scripts ([see code](https://github.com/stano45/p4containerflow/pull/8/files#diff-4629df8faab3d51f1ba718140fd7562c999cbed2ef34bcd34881790b92b1a00f)). 
+Using netns, veth pairs, and the iproute2 suite to set MAC and IP addresses of virtual interfaces, we rebuilt the mininet topology on the Linux Networking Stack. This is done in the form of bash scripts ([see code](https://github.com/stano45/p4containerflow/blob/998d1dcb70cb97cee3636877cc68cb296cdc32b6/examples/process_migration/build.sh)). 
 
 The following diagram shows the created topology, including the virtual interfaces:
 
@@ -146,8 +146,8 @@ There is no explicit link from the network bridge to the switch port. We ensured
 However, this approach is not ideal, since the IP route and the static MAC address have to be inserted inside the container. This is not possible with most containers, since most only include the required binaries and no networking packages, such as iproute2. Therefore, a further configuration of each container would be necessary, which might not be scalable in real-world scenarios. We did not address this problem, as this is only an intermediate step in the project, and the topology will change in the next steps.
 
 Furthermore, when setting up the routing, we encountered a strange issue: each established TCP connection would receive an `RST` packet from some interface and terminate. If you ever encounter such an issue in your experiments, it might be easier to check the following:
-Are there IP table rules that drop TCP packets anywhere? This would mean the kernel sends the TCP `RST` from that interface.
-Is the switch interface in promiscuous mode? Sometimes, when a packet is addressed at an interface, the kernel sends a `RST` packet, since there is no process listening on that interface.
+1. Are there IP table rules that drop TCP packets anywhere? This would mean the kernel sends the TCP `RST` from that interface.
+2. Is the switch interface in promiscuous mode? Sometimes, when a packet is addressed at an interface, the kernel sends a `RST` packet, since there is no process listening on that interface.
 
 This issue can be solved by blocking TCP reset packets generated by the interface. 
 
@@ -193,9 +193,9 @@ This creates a clean, backwards-compatible model where Pods can be treated much 
 
 This model is similar to what we have deployed in previous examples, where each pod was assigned a unique IP address, while the pod network interface is often a bridge.  However, the pod IP is allocated by Kubernetes. We will discuss the implications of this in the next section.
 
-Furthermore, it is important to understand how load balancing is handled in Kubernetes. As always, there are multiple options. Firstly, it is possible to create a `Service` of type `LoadBalancer`. The load balancer is implemented by the cloud provider and is usually a proprietary component, and it cannot be deployed locally without extra effort.
+Furthermore, it is important to understand how load balancing is handled in Kubernetes. As always, there are multiple options. Firstly, it is possible to create a `Service` of type `LoadBalancer`. The load balancer is implemented by the cloud provider and is usually a proprietary component, which cannot be deployed locally without extra effort.
 
-Therefore, evaluated various open source solutions to Kubernetes  to assess how we can approach the integration of the BMv2 switch into the Kubernetes ecosystem.
+Therefore, we evaluated various open source solutions to Kubernetes  to assess how we can approach the integration of the BMv2 switch into the Kubernetes ecosystem.
 
 Firstly, we looked at [MetalLB](https://metallb.universe.tf/), which provides a load balancer implementation for bare metal clusters. Using MetalLB in layer 2 mode, all service traffic is routed to a single node, where `kube-proxy` spreads the traffic to pods. This model could be potentially extended by integrating a BMv2 switch running our P4 load load balancer program.
 
@@ -220,7 +220,7 @@ Migration within of a container running inside a Kubernetes pod requires multipl
 5. Applying the manifest to restore the container.
 
 However, there are multiple issues with this approach, which will need to be addressed in future development of the project:
-1. Restoring a container with a new IP address in Kubernetes presents a "chicken or the egg" problem. In our approach, the checkpoint is modified with the new IP address (similar to `scripts/edit_files_img.py`), but Kubernetes allocates the IP address during restore. This could potentially be handled by running an [init container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) in the target pod to make Kubernetes assing an IP address before container restore.
+1. Restoring a container with a new IP address in Kubernetes presents a "chicken or the egg" problem. In our approach, the checkpoint is modified with the new IP address (similar to [scripts/edit_files_img.py](https://github.com/stano45/p4containerflow/blob/998d1dcb70cb97cee3636877cc68cb296cdc32b6/scripts/edit_files_img.py)), but Kubernetes allocates the IP address during restore. This could potentially be handled by running an [init container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) in the target pod to make Kubernetes assing an IP address before container restore.
 2. The "Connection reset by peer" error always occurs after restore because checkpointing is performed for a container in a network namespace allocated to a Pod. There is no mechanism currently to prevent the Linux kernel from closing the TCP connection when a new packet is received from the client while the checkpointed container is not running. This problem could be solved by attaching [CRIU action scripts](https://criu.org/Action_scripts) to [Kubernetes lifecycle events](https://kubernetes.io/docs/tasks/configure-pod-container/attach-handler-lifecycle-event/) to lock the network and prevent the Kernel from sending a `RST` packet to the client.
 3. The current checkpoint/restore mechanism in Kubernetes was primarily designed for forensic analysis and unsuitable for live migration. In particular, it takes significant time to create a checkpoint archive, upload it to a container registry, and restore the container in a new Pod. This results in significant downtime. Within future work, there is room to optimize this process in multiple places.
 
