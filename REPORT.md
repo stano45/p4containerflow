@@ -87,7 +87,7 @@ The controller also keeps track of the match-action table state, by a target IP 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/controller_light.png">
   <source media="(prefers-color-scheme: light)" srcset="assets/controller_dark.png">
-  <img alt="Shows a flow chart of interaction between the user script, controller and BMv2 switch." src="assets/controller_dark.png" width="600">
+  <img alt="Shows a flow chart of interaction between the user script, controller and BMv2 switch." src="assets/controller_dark.png" width="700">
 </picture>
 
 During this stage, we faced minor issues:
