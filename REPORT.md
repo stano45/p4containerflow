@@ -53,7 +53,7 @@ All of the artifacts developed within this project are available in the followin
 
 
 ## Implementation details
-This project was implemented in small, incremental steps, from simple process migration using CRIU to an integration with Kubernetes. We described each step in this document by outlining the key changes, identifying challenges faced during development, and discussing possible solutions. In each step, we linked relevant code and resources that could be helpful for anyone facing similar challenges.
+This project was implemented in small, incremental steps, from simple process migration using [CRIU](https://criu.org/Main_Page) to an integration with [Kubernetes](https://kubernetes.io/). We described each step in this document by outlining the key changes, identifying challenges faced during development, and discussing possible solutions. In each step, we linked relevant code and resources that could be helpful for anyone facing similar challenges.
 
 ### Initial prototype
 Relevant PR: https://github.com/stano45/p4containerflow/pull/1
