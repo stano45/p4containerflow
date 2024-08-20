@@ -1,4 +1,6 @@
-# checkpoint-rbac.yaml
+# When running the `kubectl checkpoint` command, you may see the following error:
+# Forbidden (user=system:node:<your_machine_name>, verb=create, resource=nodes, subresource=checkpoint)
+# This ClusterRole allows the create verb on the nodes resource and the nodes/checkpoint subresource.
 
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
