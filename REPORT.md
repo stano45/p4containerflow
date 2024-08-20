@@ -66,7 +66,12 @@ p4runtime (python library for interacting with switches).
 
 Furthermore, we reused the load_balance exercise from the [p4lang/tutorials](https://github.com/p4lang/tutorials) repository. This is a simple load balancer, which hashes connections based on the source IP, source port, destination IP, destination port, and protocol into 2 buckets, which represent hosts. The output of this hash is 0 or 1, which is then used to index the target host (`h2` or `h3`) using the `ecmp_nhop` table.
 
-<img src="assets/simple_lb_light.png" alt="initial_lb" width="500"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/simple_lb_light.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/simple_lb_dark.png">
+  <img alt="Shows a graph of nodes and switches to demostrate a simple load balancing solution." src="assets/simple_lb_dark.png" width="500">
+</picture>
+
 
 ### Controller
 Relevant PRs:  
@@ -79,8 +84,11 @@ Next, we want to be able to change the hosts during runtime. We built a Python-b
 
 The controller also keeps track of the match-action table state, by a target IP -> index mapping. The index mapping corresponds to the value in the `ecmp_nhop` table. This makes it more efficient to look up the index of a specific IP in the table, without the need to fetch table state from the switch on each update request.
 
-<img src="assets/controller_light.png" alt="controller" width="600"/>
-
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/controller_light.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/controller_dark.png">
+  <img alt="Shows a flow chart of interaction between the user script, controller and BMv2 switch." src="assets/controller_dark.png" width="600">
+</picture>
 
 During this stage, we faced minor issues:
 - There is a distinction between `INSERT` and `MODIFY` operations when updating table entries. The `INSERT` operation will not work when trying to modify an existing table entry. Therefore, we modified the utils from p4lang/tutorials to correctly set the operation type in the request ([see code](https://github.com/stano45/p4containerflow/pull/3/files#diff-4f9b1842d1e340173e930bf32157910c84b4c896e1530e48d7995f97b3425e57)).
@@ -120,7 +128,12 @@ Using netns, veth pairs, and the iproute2 suite to set MAC and IP addresses of v
 
 The following diagram shows the created topology, including the virtual interfaces:
 
-<img src="assets/linux_network_light.png" alt="controller" width="600"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/linux_network_light.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/linux_network_dark.png">
+  <img alt="Shows a graph with hosts and switches in the system, wired up via veth pairs." src="assets/linux_network_dark.png" width="600">
+</picture>
+
 
 Setting up a complex virtual network topology is not straightforward. We outlined key challenges we faced during implementation:
 
@@ -136,7 +149,11 @@ Specifically, Podman uses the netavark backend for virtual networking. Each netw
 
 The following diagram shows the network topology of a single host and the connection of the network to a switch port:
 
-<img src="assets/container_interface_light.png" alt="container_interface" width="400"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/container_interface_light.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/container_interface_dark.png">
+  <img alt="Shows how a container (h1) is connected to its network (h1-net) via a veth pair, and how that network is connected to the switch s1 via the network bridge h1-br." src="assets/container_interface_dark.png" width="400">
+</picture>
 
 We wrote a script to create a network and a pod for each container. A pod is a group of containers with a shared IP address. This is also the case within the Kubernetes network model. We built a container image using the TCP server executable from the previous steps. Analogously, we built a client image. 
 
@@ -160,8 +177,11 @@ For simplicity, the switch container runs on the host network. The container ima
 
 The following diagram shows the network topology, which consists of 4 Podman networks interfaced by bridges, connected to a single BMv2 switch running in a container, but on the host network:
 
-<img src="assets/container_network_light.png" alt="container_interface" width="400"/>
-
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/container_network_light.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/container_network_dark.png">
+  <img alt="Shows how hosts h1-h4 are connected to their respective networks and how the container networks are connected to the switch s1." src="assets/container_network_dark.png" width="400">
+</picture>
 
 ### Redis container migration
 Relevant PR: https://github.com/stano45/p4containerflow/pull/18 
@@ -172,7 +192,11 @@ A backend application (App) running on host 1 (`h1`), exposing an endpoint to fe
 A client, also running on `h1`, that periodically fetches data from the BE and prints them in the console (simulating an oversimplified frontend application),
 A producer, also running on `h1`, periodically fetches a numerical ‘counter’ entry from the Redis DB, increments it by one, and updates the entry in the database.
 
-<img src="assets/redis_light.png" alt="container_interface" width="500"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/redis_light.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/redis_dark.png">
+  <img alt="Shows the architecture of the Redis migration example, with BE, FE and producer running on h1, and Redis DB on h2, and an arrow showcasing how Redis DB should be migrated to h3." src="assets/redis_dark.png" width="500">
+</picture>
 
 After deploying this system, we can observe the counter being periodically incremented by the producer. We perform a migration of the Redis DB from host 2 to host 3, the same way as in the previous examples, and observe little to no downtime from the client’s perspective. 
 
