@@ -58,11 +58,11 @@ This project was implemented in small, incremental steps, from simple process mi
 ### Initial prototype
 Relevant PR: https://github.com/stano45/p4containerflow/pull/1
 
-The P4 organization already provides convenient scripts to build a virtual machine (VM) which includes all relevant P4 packages. This VM runs Ubuntu 24.04 and includes packages such as:
-The BMv2 software switch,
-The p4 compiler (p4c),
-mininet,
-p4runtime (python library for interacting with switches).
+The P4 organization already provides convenient scripts to build a virtual machine (VM) which includes all relevant P4 packages. This [VM](https://github.com/p4lang/tutorials/tree/master/vm-ubuntu-24.04) runs [Ubuntu 24.04](https://releases.ubuntu.com/noble/) and includes packages such as:
+- [The BMv2 software switch](https://github.com/p4lang/behavioral-model),
+- [The p4 compiler (p4c)](https://github.com/p4lang/p4c),
+- [mininet](https://github.com/mininet/mininet),
+- [p4runtime (python library for interacting with switches)](https://github.com/p4lang/p4runtime).
 
 Furthermore, we reused the load_balance exercise from the [p4lang/tutorials](https://github.com/p4lang/tutorials) repository. This is a simple load balancer, which hashes connections based on the source IP, source port, destination IP, destination port, and protocol into 2 buckets, which represent hosts. The output of this hash is 0 or 1, which is then used to index the target host (`h2` or `h3`) using the `ecmp_nhop` table.
 
@@ -143,7 +143,7 @@ Setting up a complex virtual network topology is not straightforward. We outline
 ### Containerizing hosts
 Relevant PR: https://github.com/stano45/p4containerflow/pull/9
 
-After everything was running properly on a virtualized network, we immediately recognized that the next step would be to start containerizing components. Container management tools (such as Podman) create network namespaces and wire them up using veth pairs in a very similar way as we did in the previous step.
+After everything was running properly on a virtualized network, we immediately recognized that the next step would be to start containerizing components. Container management tools (such as [Podman](https://podman.io/)) create network namespaces and wire them up using veth pairs in a very similar way as we did in the previous step.
 
 Specifically, Podman uses the netavark backend for virtual networking. Each network is a separate network namespace, and each container in the network is connected to a network bridge. The network has a reserved IP address range, and the network bridge acts as the gateway. Each container assigned to a network gets its own IP.
 
@@ -209,7 +209,7 @@ the connected clients count stays at 2, confirming both the app’s and producer
 
 ### The Kubernetes network model
 
-Before we dive into the Kubernetes integration, it is important to understand the Kubernetes network model, and how load balancing is handled in practice.
+Before we dive into the [Kubernetes](https://kubernetes.io/) integration, it is important to understand the Kubernetes network model, and how load balancing is handled in practice.
 This is how Kubernetes networking is described in the [official documentation](https://kubernetes.io/docs/concepts/services-networking/):
 
 > Every Pod in a cluster gets its own unique cluster-wide IP address (one address per IP address family). This means you do not need to explicitly create links between Pods and you almost never need to deal with mapping container ports to host ports.
