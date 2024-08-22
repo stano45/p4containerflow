@@ -1,6 +1,6 @@
 include ../../utils/Makefile
 
-all: compile build controller
+all: images compile build controller
 
 terminals: h1 h2 h3 h4
 
