@@ -24,6 +24,7 @@ For more information about the project, please refer to the [final report](REPOR
 - [P4 Compiler](https://github.com/p4lang/p4c) (v1.2.4.14)
 - [PI](https://github.com/p4lang/PI)
 - [Podman](https://podman.io/docs/installation) (v5.2.1)
+The versions mentioned above are the ones used during development. Newer versions may work, but have not been tested.
 
 We have provided [scripts](scripts) to install CRIU (with crit), the P4 compiler, PI, and Podman. The scripts have been tested on Ubuntu 22.04 and 24.04 and are not guaranteed to work on all machines. If you encounter any issues, please refer to the official documentation of the respective projects.
 
