@@ -1,3 +1,4 @@
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,8 +7,8 @@ spec:
   selector:
     app: http-server
   ports:
-  - protocol: TCP
-    port: 12345
-    targetPort: 12345
-  type: ClusterIP
-
+    - protocol: TCP
+      port: 12345
+      targetPort: 12345
+      nodePort: 30001 # Set a specific NodePort value
+  type: NodePort

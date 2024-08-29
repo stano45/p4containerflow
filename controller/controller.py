@@ -118,6 +118,31 @@ def update_node():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/add_node", methods=["POST"])
+def add_node():
+    data = request.get_json()
+
+    ipv4 = data.get("ipv4")
+    dest_mac = data.get("dmac")
+
+    try:
+        egress_port = int(data.get("eport"))
+    except ValueError:
+        return jsonify({"error": "Invalid eport parameter"}), 400
+
+    if not all([ipv4, dest_mac, egress_port]):
+        return jsonify({"error": "Missing parameters"}), 400
+
+    try:
+        nodeManager.addNode(ipv4, dest_mac, egress_port)
+        return jsonify({"status": "success"}), 200
+    except grpc.RpcError as e:
+        printGrpcError(e)
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="P4Runtime Controller")
     parser.add_argument(

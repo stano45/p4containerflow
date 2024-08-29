@@ -1,0 +1,58 @@
+ARG PARENT_VERSION=latest
+FROM p4lang/pi:${PARENT_VERSION}
+LABEL maintainer="P4 Developers <p4-dev@lists.p4.org>"
+
+ARG CC=gcc
+ARG CXX=g++
+ARG GCOV=
+ARG sswitch_grpc=yes
+
+ENV BM_DEPS automake \
+    build-essential \
+    clang-8 \
+    clang-10 \
+    curl \
+    git \
+    lcov \
+    libgmp-dev \
+    libpcap-dev \
+    libboost-dev \
+    libboost-program-options-dev \
+    libboost-system-dev \
+    libboost-filesystem-dev \
+    libboost-thread-dev \
+    libtool \
+    pkg-config \
+    ca-certificates 
+
+ENV BM_RUNTIME_DEPS libboost-program-options1.71.0 \
+    libboost-system1.71.0 \
+    libboost-filesystem1.71.0 \
+    libboost-thread1.71.0 \
+    libgmp10 \
+    libpcap0.8 \
+    python3 \
+    python-is-python3
+
+# Install dependencies
+RUN apt-get update  && \
+    apt-get install -y --no-install-recommends $BM_DEPS $BM_RUNTIME_DEPS
+
+# Clone the repository
+RUN git clone https://github.com/p4lang/behavioral-model.git /behavioral-model
+
+# Set working directory
+WORKDIR /behavioral-model/
+
+RUN ./autogen.sh
+
+RUN ./configure --with-thrift --with-pdfixed --with-pi
+
+RUN make -j2
+
+RUN make install-strip && ldconfig
+
+RUN apt-get purge  $BM_DEPS && \
+    apt-get autoremove -y --purge  && \
+    rm -rf /behavioral-model /var/cache/apt/* /var/lib/apt/lists/* && \
+    echo 'Image done'

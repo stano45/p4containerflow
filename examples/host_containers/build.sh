@@ -83,9 +83,8 @@ for i in $(seq 1 $NUM_HOSTS); do
     interfaces+=("h${i}-veth")
 done
 
-
 for iface in "${interfaces[@]}"; do
-printf "Interface: %s\n" $iface
+    printf "Interface: %s\n" $iface
     # Disable IPv6 on the interfaces, so that the Linux kernel
     # will not automatically send IPv6 MDNS, Router Solicitation,
     # and Multicast Listener Report packets on the interface,
@@ -106,7 +105,6 @@ printf "Interface: %s\n" $iface
     sudo ip link set dev $iface up
 done
 
-
 # Enable IP forwarding
 sudo sysctl -w net.ipv4.ip_forward=1
 
@@ -125,10 +123,10 @@ sudo simple_switch_grpc \
     --log-console \
     --thrift-port 9090 \
     -- \
-    --grpc-server-addr 0.0.0.0:50051 > ${LOG_DIR}/s1.log \
-    > ${LOG_DIR}/s1.log \
-    2>&1 & \
-    echo $!
+    --grpc-server-addr 0.0.0.0:50051 >${LOG_DIR}/s1.log \
+    >${LOG_DIR}/s1.log \
+    2>&1 &
+echo $!
 
 sudo simple_switch_grpc \
     -i 1@s2-eth1 \
@@ -139,10 +137,10 @@ sudo simple_switch_grpc \
     --log-console \
     --thrift-port 9091 \
     -- \
-    --grpc-server-addr 0.0.0.0:50052 > ${LOG_DIR}/s2.log \
-    > ${LOG_DIR}/s2.log \
-    2>&1 & \
-    echo $!
+    --grpc-server-addr 0.0.0.0:50052 >${LOG_DIR}/s2.log \
+    >${LOG_DIR}/s2.log \
+    2>&1 &
+echo $!
 
 sudo simple_switch_grpc \
     -i 1@s3-eth1 \
@@ -154,9 +152,9 @@ sudo simple_switch_grpc \
     --thrift-port 9092 \
     -- \
     --grpc-server-addr 0.0.0.0:50053 \
-    > ${LOG_DIR}/s3.log \
-    2>&1 & \
-    echo $!
+    >${LOG_DIR}/s3.log \
+    2>&1 &
+echo $!
 
 sudo simple_switch_grpc \
     -i 1@s4-eth1 \
@@ -168,6 +166,6 @@ sudo simple_switch_grpc \
     --thrift-port 9093 \
     -- \
     --grpc-server-addr 0.0.0.0:50054 \
-    > ${LOG_DIR}/s4.log \
-    2>&1 & \
-    echo $!
+    >${LOG_DIR}/s4.log \
+    2>&1 &
+echo $!

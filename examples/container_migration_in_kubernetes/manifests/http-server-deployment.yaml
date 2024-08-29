@@ -15,8 +15,8 @@ spec:
         app: http-server
     spec:
       containers:
-      - name: http-server
-        image: quay.io/radostin/http-server:latest
-        ports:
-        - containerPort: 12345
-
+        - name: http-server
+          image: quay.io/radostin/http-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 12345

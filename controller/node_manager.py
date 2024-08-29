@@ -28,10 +28,9 @@ class NodeManager(object):
 
     def updateNode(self, old_ip, new_ip, dest_mac, egress_port):
         if new_ip in self.node_map:
-            pass
-            raise Exception(f"Node with IP {new_ip=} already exists")
+            raise Exception(f"Node with IP {new_ip} already exists")
         if old_ip not in self.node_map:
-            raise Exception(f"Node with IP {old_ip=} does not exist")
+            raise Exception(f"Node with IP {old_ip} does not exist")
 
         ecmp_select_id = self.node_map.pop(old_ip)
 
@@ -44,3 +43,27 @@ class NodeManager(object):
         )
 
         self.node_map[new_ip] = ecmp_select_id
+
+    def addNode(self, ip, mac, port):
+        if ip in self.node_map:
+            raise Exception(f"Node with IP {ip} already exists")
+
+        ecmp_select_id = len(self.node_map) + 1  # Next available ECMP ID
+        self.switch_controller.insertEcmpNhopEntry(
+            ecmp_select=ecmp_select_id,
+            dmac=mac,
+            ipv4=ip,
+            port=port,
+            update_type="INSERT",
+        )
+
+        self.node_map[ip] = ecmp_select_id
+
+        # Update the ECMP group to include the new node
+        self.switch_controller.insertEcmpGroupEntry(
+            matchDstAddr=["10.0.1.10", 32],
+            ecmp_base=1,
+            ecmp_count=len(self.node_map),
+        )
+
+        self.switch_controller.readTableRules()
