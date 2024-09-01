@@ -1,58 +1,20 @@
-ARG PARENT_VERSION=latest
-FROM p4lang/pi:${PARENT_VERSION}
-LABEL maintainer="P4 Developers <p4-dev@lists.p4.org>"
+FROM debian:bullseye-slim
 
-ARG CC=gcc
-ARG CXX=g++
-ARG GCOV=
-ARG sswitch_grpc=yes
-
-ENV BM_DEPS automake \
-    build-essential \
-    clang-8 \
-    clang-10 \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
     curl \
-    git \
-    lcov \
-    libgmp-dev \
-    libpcap-dev \
-    libboost-dev \
-    libboost-program-options-dev \
-    libboost-system-dev \
-    libboost-filesystem-dev \
-    libboost-thread-dev \
-    libtool \
-    pkg-config \
-    ca-certificates 
+    gnupg2 \
+    && rm -rf /var/lib/apt/lists/*
 
-ENV BM_RUNTIME_DEPS libboost-program-options1.71.0 \
-    libboost-system1.71.0 \
-    libboost-filesystem1.71.0 \
-    libboost-thread1.71.0 \
-    libgmp10 \
-    libpcap0.8 \
-    python3 \
-    python-is-python3
+RUN echo "Acquire::ForceIPv4 \"true\";" > /etc/apt/apt.conf.d/99force-ipv4
 
-# Install dependencies
-RUN apt-get update  && \
-    apt-get install -y --no-install-recommends $BM_DEPS $BM_RUNTIME_DEPS
+RUN echo 'deb http://download.opensuse.org/repositories/home:/p4lang/Debian_11/ /' > /etc/apt/sources.list.d/home:p4lang.list \
+    && curl -fsSL https://download.opensuse.org/repositories/home:p4lang/Debian_11/Release.key | gpg --dearmor -o /etc/apt/trusted.gpg.d/home_p4lang.gpg
 
-# Clone the repository
-RUN git clone https://github.com/p4lang/behavioral-model.git /behavioral-model
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    p4lang-bmv2 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
-WORKDIR /behavioral-model/
+ENTRYPOINT ["simple_switch_grpc"]
 
-RUN ./autogen.sh
-
-RUN ./configure --with-thrift --with-pdfixed --with-pi
-
-RUN make -j2
-
-RUN make install-strip && ldconfig
-
-RUN apt-get purge  $BM_DEPS && \
-    apt-get autoremove -y --purge  && \
-    rm -rf /behavioral-model /var/cache/apt/* /var/lib/apt/lists/* && \
-    echo 'Image done'
+CMD ["--help"]

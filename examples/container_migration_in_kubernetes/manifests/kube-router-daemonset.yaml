@@ -33,19 +33,19 @@ spec:
         - key: "node-role.kubernetes.io/master"
           effect: "NoSchedule"
       containers:
-        - name: s1-container
-          image: docker.io/p4lang/p4c:1.2.4.13
+        - name: bmv2-switch
+          image: docker.io/skosorin/bmv2
           imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "-c"]
           args:
-            - |
-              simple_switch_grpc \
-                --device-id 0 \
-                /load_balance.json \
-                --log-console \
-                --thrift-port 9090 \
-                -- \
-                --grpc-server-addr 0.0.0.0:50051
+            - "--device-id"
+            - "0"
+            - "/load_balance.json"
+            - "--log-console"
+            - "--thrift-port"
+            - "9090"
+            - "--"
+            - "--grpc-server-addr"
+            - "0.0.0.0:50051"
           securityContext:
             privileged: true
           volumeMounts:

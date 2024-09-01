@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
@@ -166,61 +167,46 @@ func cmdDel(args *skel.CmdArgs) error {
 
 func connectToBMv2Switch(ifName, thriftPort string) error {
 	logger.Printf("Connecting veth %s to BMv2 switch on thrift port %s", ifName, thriftPort)
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randomPortNum := rng.Intn(65535) + 1 
 
-	// Run show_ports command to get currently used port numbers
 	cmd := exec.Command("simple_switch_CLI", "--thrift-port", thriftPort)
-	cmd.Stdin = strings.NewReader("show_ports\n")
+	cmd.Stdin = strings.NewReader(fmt.Sprintf("port_add %s %d\n", ifName, randomPortNum))
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		logger.Printf("Error running show_ports: %v. Output: %s", err, output)
-		return fmt.Errorf("failed to run show_ports: %s", output)
-	}
-
-	// Parse the output to find the highest port number
-	nextPortNum, err := getNextPortNumber(string(output))
-	if err != nil {
-		logger.Printf("Error determining next port number: %v", err)
-		return err
-	}
-
-	// Use the next available port number
-	cmd = exec.Command("simple_switch_CLI", "--thrift-port", thriftPort)
-	cmd.Stdin = strings.NewReader(fmt.Sprintf("port_add %s %d\n", ifName, nextPortNum))
-	output, err = cmd.CombinedOutput()
 	if err != nil {
 		logger.Printf("Error adding port to BMv2 switch: %v. Output: %s", err, output)
 		return fmt.Errorf("failed to add port to BMv2 switch: %s", output)
 	}
-	logger.Printf("Port %d added to BMv2 switch successfully", nextPortNum)
+	logger.Printf("Port %d added to BMv2 switch successfully", randomPortNum)
 	return nil
 }
 
 // Helper function to parse the show_ports output and determine the next available port number
-func getNextPortNumber(output string) (int, error) {
-	lines := strings.Split(output, "\n")
-	for i, line := range lines {
-		logger.Printf("Line %d: %s", i, line)
-	}
-	numLines := len(lines)
+// func getNextPortNumber(output string) (int, error) {
+// 	lines := strings.Split(output, "\n")
+// 	for i, line := range lines {
+// 		logger.Printf("Line %d: %s", i, line)
+// 	}
+// 	numLines := len(lines)
 
-	if numLines < 3 {
-		// If there are fewer than 2 lines, default to port 0
-		return 0, nil
-	}
+// 	if numLines < 3 {
+// 		// If there are fewer than 2 lines, default to port 0
+// 		return 0, nil
+// 	}
 
-	// Get the second-to-last line
-	secondToLastLine := lines[numLines-3]
-	logger.Printf("Second-to-last line: %s", secondToLastLine)
-	fields := strings.Fields(secondToLastLine)
+// 	// Get the second-to-last line
+// 	secondToLastLine := lines[numLines-3]
+// 	logger.Printf("Second-to-last line: %s", secondToLastLine)
+// 	fields := strings.Fields(secondToLastLine)
 
-	// Attempt to parse the first field as the port number
-	if len(fields) > 0 {
-		portNum, err := strconv.Atoi(fields[0])
-		if err == nil {
-			return portNum + 1, nil // Return the next available port number
-		}
-	}
+// 	// Attempt to parse the first field as the port number
+// 	if len(fields) > 0 {
+// 		portNum, err := strconv.Atoi(fields[0])
+// 		if err == nil {
+// 			return portNum + 1, nil // Return the next available port number
+// 		}
+// 	}
 
-	// Default to port 0 if parsing fails
-	return 0, nil
-}
+// 	// Default to port 0 if parsing fails
+// 	return 0, nil
+// }
