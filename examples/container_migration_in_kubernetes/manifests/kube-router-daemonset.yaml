@@ -54,6 +54,13 @@ spec:
               subPath: load_balance.json
             - name: pcap-dir
               mountPath: /pcaps
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "0.5"
+            limits:
+              memory: "256Mi"
+              cpu: "1"
       volumes:
         - name: cni-bin
           hostPath:

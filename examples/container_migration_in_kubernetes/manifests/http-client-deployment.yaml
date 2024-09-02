@@ -1,25 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: http-server
+  name: http-client
   labels:
-    app: http-server
+    app: http-client
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: http-server
+      app: http-client
   template:
     metadata:
       labels:
-        app: http-server
+        app: http-client
     spec:
       containers:
-        - name: http-server
-          image: docker.io/skosorin/http-server
+        - name: http-client
+          image: docker.io/skosorin/http-client
           imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 12345
           resources:
             requests:
               memory: "128Mi"
@@ -27,3 +25,9 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "1"
+          env:
+            # P4 load balancer IP
+            - name: SERVER_IP
+              value: "10.0.1.10"
+            - name: SERVER_PORT
+              value: "12345"
