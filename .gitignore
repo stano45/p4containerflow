@@ -31,4 +31,4 @@ tcp/client
 .venv
 dump.log
 
-bmv2-cni
+bmv2-cni/bmv2-cni

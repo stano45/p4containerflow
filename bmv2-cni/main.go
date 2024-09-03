@@ -17,14 +17,16 @@ import (
 	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/containernetworking/plugins/pkg/ip"
+	"github.com/containernetworking/plugins/pkg/ipam"
 	"github.com/containernetworking/plugins/pkg/ns"
 	"github.com/vishvananda/netlink"
 )
 
 type BMv2NetConf struct {
 	types.NetConf
-	ThriftPort string `json:"thriftPort"`
-	LogFile    string `json:"logFile"`
+	ThriftPort string      `json:"thriftPort"`
+	LogFile    string      `json:"logFile"`
+	IPAM       *types.IPAM `json:"ipam"`
 }
 
 var (
@@ -95,18 +97,41 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return err
 		}
 
-		// TODO: use a proper IPAM plugin here
-		ipv4Addr, ipv4Net, err := net.ParseCIDR("10.0.0.1/24")
-		if err != nil {
-			logger.Printf("Error parsing CIDR: %v", err)
-			return err
-		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// IPAM: Allocate an IP address using the IPAM plugin
+	r, err := ipam.ExecAdd(conf.IPAM.Type, args.StdinData)
+	if err != nil {
+		logger.Printf("Error from IPAM: %v", err)
+		return err
+	}
+
+	result, err := current.NewResultFromResult(r)
+	if err != nil {
+		logger.Printf("Error converting IPAM result: %v", err)
+		return err
+	}
+
+	if len(result.IPs) == 0 {
+		return fmt.Errorf("IPAM plugin returned no IPs")
+	}
+
+	ipConfig := result.IPs[0]
+
+	err = containerNs.Do(func(_ ns.NetNS) error {
+		// Apply the IP address to the container's interface
 		link, err := netlink.LinkByName(containerInterface.Name)
 		if err != nil {
 			return fmt.Errorf("failed to lookup %q: %v", containerInterface.Name, err)
 		}
 
-		if err := netlink.AddrAdd(link, &netlink.Addr{IPNet: &net.IPNet{IP: ipv4Addr, Mask: ipv4Net.Mask}}); err != nil {
+		addr := &netlink.Addr{IPNet: &ipConfig.Address, Label: ""}
+		logger.Printf("Adding IP address %s to %q", addr, containerInterface.Name)
+		if err := netlink.AddrAdd(link, addr); err != nil {
 			return fmt.Errorf("failed to add IP addr to %q: %v", containerInterface.Name, err)
 		}
 
@@ -128,17 +153,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 	logger.Printf("Veth %s connected to BMv2 switch on port %d", hostInterface.Name, randomPortNum)
-	result := &current.Result{
-		CNIVersion: conf.CNIVersion,
-		Interfaces: []*current.Interface{{
-			Name:    hostInterface.Name,
-			Sandbox: args.Netns,
-		}},
-		// TODO: add IPs to result
-		// IPs: []*current.IPConfig{{
-		// 	Address: net.IPNet{IP: ipv4Addr, Mask: ipv4Net.Mask},
-		// }},
-	}
+
+	// Add IPs to the result
+	result.Interfaces = []*current.Interface{{
+		Name:    hostInterface.Name,
+		Sandbox: args.Netns,
+	}}
+	result.IPs = []*current.IPConfig{ipConfig}
 
 	logger.Println("CNI Add operation completed successfully")
 	return types.PrintResult(result, conf.CNIVersion)
@@ -160,6 +181,11 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	if err := checkBMv2Switch(conf.ThriftPort); err != nil {
 		logger.Printf("Error checking BMv2 switch: %v", err)
+		return err
+	}
+
+	if err := ipam.ExecDel(conf.IPAM.Type, args.StdinData); err != nil {
+		logger.Printf("Error from IPAM on DEL: %v", err)
 		return err
 	}
 
