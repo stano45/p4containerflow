@@ -1,5 +1,8 @@
+
 sudo sysctl -w net.ipv4.ip_forward=1
-sudo kubeadm reset -f
+sudo kubeadm reset -f --cri-socket=unix:///var/run/crio/crio.sock
+sudo rm -f /var/log/bmv2-cni.log
+
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --cri-socket=unix:///var/run/crio/crio.sock
 
 mkdir -p $HOME/.kube

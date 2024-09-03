@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -57,9 +58,15 @@ func loadConf(bytes []byte) (*BMv2NetConf, error) {
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
+	logger.Printf("Args in CNI Add: %v", args)
 	conf, err := loadConf(args.StdinData)
 	if err != nil {
 		logger.Printf("Error loading CNI config: %v", err)
+		return err
+	}
+
+	if err := checkBMv2Switch(conf.ThriftPort); err != nil {
+		logger.Printf("Error checking BMv2 switch: %v", err)
 		return err
 	}
 
@@ -77,17 +84,18 @@ func cmdAdd(args *skel.CmdArgs) error {
 	defer containerNs.Close()
 	logger.Printf("Container netns: %s", containerNs.Path())
 
+	hostVethName := getHostVethName(args.ContainerID)
+
 	var hostInterface, containerInterface net.Interface
-	// Configure the container interface
+
 	err = containerNs.Do(func(_ ns.NetNS) error {
-		// Create the veth pair
-		hostInterface, containerInterface, err = ip.SetupVeth(args.IfName, 1500, "", hostNs)
+		hostInterface, containerInterface, err = ip.SetupVethWithName(args.IfName, hostVethName, 1500, "", hostNs)
 		if err != nil {
 			logger.Printf("Error creating veth pair: %v", err)
 			return err
 		}
 
-		// Allocate an IP address (you might want to use a proper IPAM plugin here)
+		// TODO: use a proper IPAM plugin here
 		ipv4Addr, ipv4Net, err := net.ParseCIDR("10.0.0.1/24")
 		if err != nil {
 			logger.Printf("Error parsing CIDR: %v", err)
@@ -111,19 +119,22 @@ func cmdAdd(args *skel.CmdArgs) error {
 	if err != nil {
 		return err
 	}
-	// Connect the host veth to the BMv2 switch
-	if err := connectToBMv2Switch(hostInterface.Name, conf.ThriftPort); err != nil {
+
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randomPortNum := rng.Intn(65535) + 1
+
+	if err := addPortToBMv2Switch(hostInterface.Name, conf.ThriftPort, randomPortNum); err != nil {
 		logger.Printf("Error connecting veth to BMv2 switch: %v", err)
 		return err
 	}
-
-	// Prepare the result
+	logger.Printf("Veth %s connected to BMv2 switch on port %d", hostInterface.Name, randomPortNum)
 	result := &current.Result{
 		CNIVersion: conf.CNIVersion,
 		Interfaces: []*current.Interface{{
-			Name:    args.IfName,
+			Name:    hostInterface.Name,
 			Sandbox: args.Netns,
 		}},
+		// TODO: add IPs to result
 		// IPs: []*current.IPConfig{{
 		// 	Address: net.IPNet{IP: ipv4Addr, Mask: ipv4Net.Mask},
 		// }},
@@ -134,23 +145,38 @@ func cmdAdd(args *skel.CmdArgs) error {
 }
 
 func cmdCheck(args *skel.CmdArgs) error {
-	// Implement status checks here
+	// TODO: implement check
 	logger.Println("CNI Check operation called")
 	return nil
 }
 
 func cmdDel(args *skel.CmdArgs) error {
+	logger.Printf("Args in CNI Del: %v", args)
 	conf, err := loadConf(args.StdinData)
 	if err != nil {
 		logger.Printf("Error loading CNI config for deletion: %v", err)
 		return err
 	}
 
-	hostVethName := fmt.Sprintf("cni-%s", args.ContainerID[:8])
+	if err := checkBMv2Switch(conf.ThriftPort); err != nil {
+		logger.Printf("Error checking BMv2 switch: %v", err)
+		return err
+	}
 
-	if err = exec.Command("simple_switch_CLI", "--thrift-port", conf.ThriftPort, "port_remove", "0").Run(); err != nil {
-		logger.Printf("Error detaching veth from BMv2 switch: %v", err)
-		return fmt.Errorf("failed to detach veth from BMv2 switch: %v", err)
+	hostVethName := getHostVethName(args.ContainerID)
+	port, err := getPortNumberByIfaceName(conf.ThriftPort, hostVethName)
+	if err != nil {
+		logger.Printf("Error getting port number for iface %s: %v", hostVethName, err)
+		return err
+	}
+	portStr := strconv.Itoa(port)
+
+	cmd := exec.Command("simple_switch_CLI", "--thrift-port", conf.ThriftPort)
+	cmd.Stdin = strings.NewReader(fmt.Sprintf("port_remove %s\n", portStr))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Printf("error detaching veth from BMv2 switch: %v, output: %s", err, string(output))
+		return fmt.Errorf("error detaching veth from BMv2 switch: %v, output: %s", err, string(output))
 	}
 
 	link, err := netlink.LinkByName(hostVethName)
@@ -165,48 +191,62 @@ func cmdDel(args *skel.CmdArgs) error {
 	return nil
 }
 
-func connectToBMv2Switch(ifName, thriftPort string) error {
+func addPortToBMv2Switch(ifName, thriftPort string, portNum int) error {
 	logger.Printf("Connecting veth %s to BMv2 switch on thrift port %s", ifName, thriftPort)
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomPortNum := rng.Intn(65535) + 1 
 
 	cmd := exec.Command("simple_switch_CLI", "--thrift-port", thriftPort)
-	cmd.Stdin = strings.NewReader(fmt.Sprintf("port_add %s %d\n", ifName, randomPortNum))
+	cmd.Stdin = strings.NewReader(fmt.Sprintf("port_add %s %d\n", ifName, portNum))
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Printf("Error adding port to BMv2 switch: %v. Output: %s", err, output)
 		return fmt.Errorf("failed to add port to BMv2 switch: %s", output)
 	}
-	logger.Printf("Port %d added to BMv2 switch successfully", randomPortNum)
+	logger.Printf("Port %d added to BMv2 switch successfully", portNum)
+	return nil
+}
+
+func checkBMv2Switch(thriftPort string) error {
+	logger.Printf("Checking BMv2 switch on thrift port %s", thriftPort)
+
+	cmd := exec.Command("simple_switch_CLI", "--thrift-port", thriftPort)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Printf("Error connecting to BMv2 switch: %v. Output: %s", err, output)
+		return fmt.Errorf("failed to add port to BMv2 switch: %s", output)
+	}
 	return nil
 }
 
 // Helper function to parse the show_ports output and determine the next available port number
-// func getNextPortNumber(output string) (int, error) {
-// 	lines := strings.Split(output, "\n")
-// 	for i, line := range lines {
-// 		logger.Printf("Line %d: %s", i, line)
-// 	}
-// 	numLines := len(lines)
+func getPortNumberByIfaceName(thriftPort, ifaceName string) (int, error) {
+	logger.Printf("Getting port number for iface %s on BMv2 switch on thrift port %s", ifaceName, thriftPort)
+	cmd := exec.Command("simple_switch_CLI", "--thrift-port", thriftPort)
+	cmd.Stdin = strings.NewReader("show_ports")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Printf("Error getting port number for iface %s: %v. Output: %s", ifaceName, err, output)
+		return 0, fmt.Errorf("failed to get port number for iface %s: %s", ifaceName, output)
+	}
+	outputStr := string(output)
+	lines := strings.Split(outputStr, "\n")
+	for i, line := range lines {
+		logger.Printf("Line %d: %s", i, line)
+	}
 
-// 	if numLines < 3 {
-// 		// If there are fewer than 2 lines, default to port 0
-// 		return 0, nil
-// 	}
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && fields[1] == ifaceName {
+			portNum, err := strconv.Atoi(fields[0])
+			if err == nil {
+				return portNum, nil
+			}
+			return 0, fmt.Errorf("failed to parse port number for iface %s", ifaceName)
+		}
+	}
 
-// 	// Get the second-to-last line
-// 	secondToLastLine := lines[numLines-3]
-// 	logger.Printf("Second-to-last line: %s", secondToLastLine)
-// 	fields := strings.Fields(secondToLastLine)
+	return 0, fmt.Errorf("iface %s not found in output", ifaceName)
+}
 
-// 	// Attempt to parse the first field as the port number
-// 	if len(fields) > 0 {
-// 		portNum, err := strconv.Atoi(fields[0])
-// 		if err == nil {
-// 			return portNum + 1, nil // Return the next available port number
-// 		}
-// 	}
-
-// 	// Default to port 0 if parsing fails
-// 	return 0, nil
-// }
+func getHostVethName(containerID string) string {
+	return fmt.Sprintf("veth%s", containerID[:5])
+}

@@ -56,11 +56,29 @@ spec:
               mountPath: /pcaps
           resources:
             requests:
-              memory: "128Mi"
-              cpu: "0.5"
-            limits:
               memory: "256Mi"
-              cpu: "1"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+        - name: bmv2-controller
+          image: docker.io/skosorin/bmv2-controller
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--config"
+            - "/config/switches.json"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext:
+            privileged: true
       volumes:
         - name: cni-bin
           hostPath:
@@ -79,3 +97,6 @@ spec:
             path: /etc/load_balancer/
         - name: pcap-dir
           emptyDir: {}
+        - name: config-volume
+          hostPath:
+            path: /home/stanley/gsoc/p4containerflow/examples/container_migration_in_kubernetes/config
