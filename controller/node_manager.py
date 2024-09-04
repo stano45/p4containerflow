@@ -12,7 +12,7 @@ class NodeManager(object):
 
         if lb_nodes is not None:
             for i, node in enumerate(lb_nodes):
-                # Port 0 is reserved for client, the rest for server nodes
+                # Port 1 is reserved for client, the rest for server nodes
                 ip = node["ip"]
                 mac = node["mac"]
                 port = node["port"]

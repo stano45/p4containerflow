@@ -19,7 +19,11 @@ spec:
       containers:
         - name: http-server
           image: docker.io/skosorin/http-server
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
+          securityContext:
+            capabilities:
+              add:
+              - NET_ADMIN
           ports:
             - containerPort: 12345
           resources:

@@ -19,7 +19,11 @@ spec:
       containers:
         - name: http-client
           image: docker.io/skosorin/http-client
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
+          securityContext:
+            capabilities:
+              add:
+              - NET_ADMIN
           resources:
             requests:
               memory: "256Mi"
