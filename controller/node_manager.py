@@ -6,24 +6,25 @@ class NodeManager(object):
         self.switch_controller = switch_controller
         # ipv4 -> ecmp_select_id
         self.node_map = {}
-        for i, node in enumerate(lb_nodes):
-            # 0 is reserved for 10.0.1.1 (client), the rest for nodes
-            ip = node["ip"]
-            mac = node["mac"]
-            port = node["port"]
-            self.node_map[ip] = i + 1
-            self.switch_controller.insertEcmpNhopEntry(
-                ecmp_select=i + 1,
-                dmac=mac,
-                ipv4=ip,
-                port=port,
-                update_type="INSERT",
+        if lb_nodes is not None:
+            for i, node in enumerate(lb_nodes):
+                # 0 is reserved for 10.0.1.1 (client), the rest for nodes
+                ip = node["ip"]
+                mac = node["mac"]
+                port = node["port"]
+                self.node_map[ip] = i + 1
+                self.switch_controller.insertEcmpNhopEntry(
+                    ecmp_select=i + 1,
+                    dmac=mac,
+                    ipv4=ip,
+                    port=port,
+                    update_type="INSERT",
+                )
+            self.switch_controller.insertEcmpGroupEntry(
+                matchDstAddr=["10.0.1.10", 32],
+                ecmp_base=1,
+                ecmp_count=len(lb_nodes),
             )
-        self.switch_controller.insertEcmpGroupEntry(
-            matchDstAddr=["10.0.1.10", 32],
-            ecmp_base=1,
-            ecmp_count=len(lb_nodes),
-        )
         self.switch_controller.readTableRules()
 
     def updateNode(self, old_ip, new_ip, dest_mac, egress_port):
@@ -44,14 +45,14 @@ class NodeManager(object):
 
         self.node_map[new_ip] = ecmp_select_id
 
-    def addNode(self, ip, mac, port):
+    def addNode(self, ip, smac, dmac, port):
         if ip in self.node_map:
             raise Exception(f"Node with IP {ip} already exists")
 
         ecmp_select_id = len(self.node_map) + 1  # Next available ECMP ID
         self.switch_controller.insertEcmpNhopEntry(
             ecmp_select=ecmp_select_id,
-            dmac=mac,
+            dmac=dmac,
             ipv4=ip,
             port=port,
             update_type="INSERT",
@@ -64,6 +65,9 @@ class NodeManager(object):
             matchDstAddr=["10.0.1.10", 32],
             ecmp_base=1,
             ecmp_count=len(self.node_map),
+            update_type="MODIFY",
         )
+
+        self.switch_controller.insertSendFrameEntry(egress_port=port, smac=smac)
 
         self.switch_controller.readTableRules()

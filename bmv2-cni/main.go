@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -24,9 +27,17 @@ import (
 
 type BMv2NetConf struct {
 	types.NetConf
-	ThriftPort string      `json:"thriftPort"`
-	LogFile    string      `json:"logFile"`
-	IPAM       *types.IPAM `json:"ipam"`
+	ThriftPort     string      `json:"thriftPort"`
+	LogFile        string      `json:"logFile"`
+	ControllerAddr string      `json:"controllerAddr"`
+	IPAM           *types.IPAM `json:"ipam"`
+}
+
+type addNodeRequest struct {
+	IPv4  string `json:"ipv4"`
+	SMAC  string `json:"smac"`
+	DMAC  string `json:"dmac"`
+	Eport int    `json:"eport"`
 }
 
 var (
@@ -57,6 +68,40 @@ func loadConf(bytes []byte) (*BMv2NetConf, error) {
 	}
 	logger.Println("Config loaded successfully")
 	return n, nil
+}
+
+func addNodeToController(controllerAddr, ipv4, smac, dmac string, eport int) error {
+	url := fmt.Sprintf("http://%s/add_node", controllerAddr)
+
+	reqBody := addNodeRequest{
+		IPv4:  ipv4,
+		SMAC:  smac,
+		DMAC:  dmac,
+		Eport: eport,
+	}
+	logger.Printf("Sending request to controller: %v", reqBody)
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %v", err)
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to send HTTP request to controller: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("controller returned non-OK status: %v, failed to read response body: %v", resp.Status, err)
+		}
+		bodyString := string(bodyBytes)
+		return fmt.Errorf("controller returned non-OK status: %v, response: %v", resp.Status, bodyString)
+	}
+
+	logger.Printf("Node with IPv4 %s and MAC %s added to controller on egress port %d", ipv4, dmac, eport)
+	return nil
 }
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -146,13 +191,24 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomPortNum := rng.Intn(65535) + 1
+	randomPortNum := rng.Intn(255) + 1
 
 	if err := addPortToBMv2Switch(hostInterface.Name, conf.ThriftPort, randomPortNum); err != nil {
 		logger.Printf("Error connecting veth to BMv2 switch: %v", err)
 		return err
 	}
 	logger.Printf("Veth %s connected to BMv2 switch on port %d", hostInterface.Name, randomPortNum)
+
+	// Send the node information to the controller
+	ipv4 := ipConfig.Address.IP.String()
+	dmac := containerInterface.HardwareAddr.String()
+	smac := hostInterface.HardwareAddr.String()
+
+	err = addNodeToController(conf.ControllerAddr, ipv4, smac, dmac, randomPortNum)
+	if err != nil {
+		logger.Printf("Error adding node to controller: %v", err)
+		return err
+	}
 
 	// Add IPs to the result
 	result.Interfaces = []*current.Interface{{

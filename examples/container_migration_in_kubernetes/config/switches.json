@@ -7,7 +7,6 @@
     "runtime_file": "/config/s1-runtime.json",
     "p4info_file_path": "/config/load_balance.p4.p4info.txt",
     "bmv2_file_path": "/config/load_balance.json",
-    "master": true,
-    "lb_nodes": [{ "ip": "10.0.2.2", "mac": "08:00:00:00:02:02", "port": 2 }]
+    "master": true
   }
 ]
