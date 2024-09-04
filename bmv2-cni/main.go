@@ -60,6 +60,49 @@ func main() {
 	skel.PluginMainFuncs(cniFuncs, version.All, "BMv2 CNI Plugin v0.1")
 }
 
+// func getKubeClient() (*kubernetes.Clientset, error) {
+// 	kubeconfig := os.Getenv("KUBECONFIG")
+// 	if kubeconfig == "" {
+// 		kubeconfig = filepath.Join("/home", "stanley", ".kube", "config")
+// 	}
+// 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	clientset, err := kubernetes.NewForConfig(config)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return clientset, nil
+// }
+
+// func getPodAnnotations(namespace, podName string) (map[string]string, error) {
+// 	clientset, err := getKubeClient()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	pod, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
+// 	if err != nil {
+// 		logger.Printf("Error getting pod %s in namespace %s: %v", podName, namespace, err)
+// 		return nil, err
+// 	}
+
+// 	return pod.Annotations, nil
+// }
+
+// func getCustomCNIArg(namespace, podName string) (string, error) {
+// 	annotations, err := getPodAnnotations(namespace, podName)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	customArg := annotations["bmv2-cni/role"]
+// 	return customArg, nil
+// }
+
 func loadConf(bytes []byte) (*BMv2NetConf, error) {
 	n := &BMv2NetConf{}
 	if err := json.Unmarshal(bytes, n); err != nil {
@@ -104,14 +147,74 @@ func addNodeToController(controllerAddr, ipv4, smac, dmac string, eport int) err
 	return nil
 }
 
+func parseCNIArgs(cniArgs string) (string, string, error) {
+	var podNamespace, podName string
+
+	// Split the string by semicolon to get the individual key-value pairs
+	argsArray := strings.Split(cniArgs, ";")
+	for _, arg := range argsArray {
+		kv := strings.Split(arg, "=")
+		if len(kv) != 2 {
+			continue // Invalid pair, skip
+		}
+
+		key := kv[0]
+		value := kv[1]
+
+		// Extract pod name and namespace
+		switch key {
+		case "K8S_POD_NAMESPACE":
+			podNamespace = value
+		case "K8S_POD_NAME":
+			podName = value
+		}
+	}
+
+	// Check if both values are extracted successfully
+	if podNamespace == "" || podName == "" {
+		return "", "", fmt.Errorf("failed to extract pod namespace or pod name from CNI_ARGS")
+	}
+
+	return podNamespace, podName, nil
+}
+
 func cmdAdd(args *skel.CmdArgs) error {
 	logger.Printf("Args in CNI Add: %v", args)
+
+	// Parse the CNI Args to get pod namespace and name
+	podNamespace, podName, err := parseCNIArgs(args.Args)
+	if err != nil {
+		logger.Printf("Error parsing CNI Args: %v", err)
+		return err
+	}
+
+	// Fetch custom CNI argument from pod annotations
+	// customArg, err := getCustomCNIArg(podNamespace, podName)
+	// if err != nil {
+	// 	logger.Printf("Error retrieving custom CNI argument: %v\n", err)
+	// 	os.Exit(1)
+	// }
+	// logger.Printf("Custom CNI Argument: %s\n", customArg)
+
+	// TODO - Implement logic to determine if the pod is a server or client,
+	// based on annotations or other metadata
+	var isServer bool
+	if strings.Contains(podName, "server") {
+		isServer = true
+	} else {
+		isServer = false
+	}
+
+	logger.Printf("Parsed Namespace: %s, Pod Name: %s, isServer: %t", podNamespace, podName, isServer)
+
+	// Load the CNI config
 	conf, err := loadConf(args.StdinData)
 	if err != nil {
 		logger.Printf("Error loading CNI config: %v", err)
 		return err
 	}
 
+	// Now proceed with the rest of your networking setup, such as BMv2 switch connection, IPAM, etc.
 	if err := checkBMv2Switch(conf.ThriftPort); err != nil {
 		logger.Printf("Error checking BMv2 switch: %v", err)
 		return err
@@ -141,7 +244,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 			logger.Printf("Error creating veth pair: %v", err)
 			return err
 		}
-
 		return nil
 	})
 	if err != nil {
@@ -168,7 +270,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 	ipConfig := result.IPs[0]
 
 	err = containerNs.Do(func(_ ns.NetNS) error {
-		// Apply the IP address to the container's interface
 		link, err := netlink.LinkByName(containerInterface.Name)
 		if err != nil {
 			return fmt.Errorf("failed to lookup %q: %v", containerInterface.Name, err)
@@ -183,7 +284,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 		if err := netlink.LinkSetUp(link); err != nil {
 			return fmt.Errorf("failed to set %q UP: %v", containerInterface.Name, err)
 		}
-
 		return nil
 	})
 	if err != nil {

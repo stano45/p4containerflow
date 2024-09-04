@@ -4,6 +4,8 @@ metadata:
   name: http-client
   labels:
     app: http-client
+  annotations:
+    bmv2-cni/role: "client"
 spec:
   replicas: 1
   selector:

@@ -4,6 +4,8 @@ metadata:
   name: http-server
   labels:
     app: http-server
+  annotations:
+    bmv2-cni/role: "server"
 spec:
   replicas: 1
   selector:
