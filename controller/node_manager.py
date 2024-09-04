@@ -1,14 +1,18 @@
 from switch_controller import SwitchController
 
+# TODO: pass this in a config file
+LB_IP = "10.244.1.244"
 
 class NodeManager(object):
     def __init__(self, switch_controller: SwitchController, lb_nodes):
         self.switch_controller = switch_controller
         # ipv4 -> ecmp_select_id
         self.node_map = {}
+        self.client = None
+
         if lb_nodes is not None:
             for i, node in enumerate(lb_nodes):
-                # 0 is reserved for 10.0.1.1 (client), the rest for nodes
+                # Port 0 is reserved for client, the rest for server nodes
                 ip = node["ip"]
                 mac = node["mac"]
                 port = node["port"]
@@ -20,8 +24,8 @@ class NodeManager(object):
                     port=port,
                     update_type="INSERT",
                 )
-            self.switch_controller.insertEcmpGroupEntry(
-                matchDstAddr=["10.0.1.10", 32],
+            self.switch_controller.insertEcmpGroupSelectEntry(
+                matchDstAddr=[LB_IP, 32],
                 ecmp_base=1,
                 ecmp_count=len(lb_nodes),
             )
@@ -45,11 +49,8 @@ class NodeManager(object):
 
         self.node_map[new_ip] = ecmp_select_id
 
-    def addNode(self, ip, smac, dmac, port):
-        if ip in self.node_map:
-            raise Exception(f"Node with IP {ip} already exists")
-
-        ecmp_select_id = len(self.node_map) + 1  # Next available ECMP ID
+    def _addServerNode(self, ip, smac, dmac, port):
+        ecmp_select_id = len(self.node_map) + 1
         self.switch_controller.insertEcmpNhopEntry(
             ecmp_select=ecmp_select_id,
             dmac=dmac,
@@ -60,14 +61,43 @@ class NodeManager(object):
 
         self.node_map[ip] = ecmp_select_id
 
-        # Update the ECMP group to include the new node
-        self.switch_controller.insertEcmpGroupEntry(
-            matchDstAddr=["10.0.1.10", 32],
+        self.switch_controller.insertEcmpGroupSelectEntry(
+            matchDstAddr=[LB_IP, 32],
             ecmp_base=1,
             ecmp_count=len(self.node_map),
             update_type="MODIFY",
         )
 
         self.switch_controller.insertSendFrameEntry(egress_port=port, smac=smac)
+    
+    def _addClientNode(self, ip, smac, dmac, port):
+        # TODO: 
+        # if self.client is not None:
+        #     raise Exception("Client node already exists")
+
+        self.switch_controller.insertEcmpNhopEntry(
+            ecmp_select=0,
+            dmac=dmac,
+            ipv4=ip,
+            port=port,
+            update_type="INSERT",
+        )
+
+        self.switch_controller.insertEcmpGroupRewriteSrcEntry(
+            matchDstAddr=[ip, 32],
+            new_src=LB_IP,
+            update_type="INSERT",
+        )
+
+        self.switch_controller.insertSendFrameEntry(egress_port=port, smac=smac, update_type="INSERT")
+
+        self.client = (ip, smac, dmac, port)
+
+    def addNode(self, ip, smac, dmac, port, isClient):
+        if ip in self.node_map:
+            raise Exception(f"Node with IP {ip} already exists")
+        
+        addNodeHandlerFn = self._addClientNode if isClient else self._addServerNode
+        addNodeHandlerFn(ip, smac, dmac, port)
 
         self.switch_controller.readTableRules()

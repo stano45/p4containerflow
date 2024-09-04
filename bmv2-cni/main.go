@@ -34,10 +34,11 @@ type BMv2NetConf struct {
 }
 
 type addNodeRequest struct {
-	IPv4  string `json:"ipv4"`
-	SMAC  string `json:"smac"`
-	DMAC  string `json:"dmac"`
-	Eport int    `json:"eport"`
+	IPv4     string `json:"ipv4"`
+	SMAC     string `json:"smac"`
+	DMAC     string `json:"dmac"`
+	Eport    int    `json:"eport"`
+	IsClient bool   `json:"isClient"`
 }
 
 var (
@@ -113,14 +114,15 @@ func loadConf(bytes []byte) (*BMv2NetConf, error) {
 	return n, nil
 }
 
-func addNodeToController(controllerAddr, ipv4, smac, dmac string, eport int) error {
+func addNodeToController(controllerAddr, ipv4, smac, dmac string, eport int, isClient bool) error {
 	url := fmt.Sprintf("http://%s/add_node", controllerAddr)
 
 	reqBody := addNodeRequest{
-		IPv4:  ipv4,
-		SMAC:  smac,
-		DMAC:  dmac,
-		Eport: eport,
+		IPv4:     ipv4,
+		SMAC:     smac,
+		DMAC:     dmac,
+		Eport:    eport,
+		IsClient: isClient,
 	}
 	logger.Printf("Sending request to controller: %v", reqBody)
 	jsonData, err := json.Marshal(reqBody)
@@ -198,14 +200,16 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	// TODO - Implement logic to determine if the pod is a server or client,
 	// based on annotations or other metadata
-	var isServer bool
+	isClient := false
+	isServer := false
+	if strings.Contains(podName, "client") {
+		isClient = true
+	}
 	if strings.Contains(podName, "server") {
 		isServer = true
-	} else {
-		isServer = false
 	}
 
-	logger.Printf("Parsed Namespace: %s, Pod Name: %s, isServer: %t", podNamespace, podName, isServer)
+	logger.Printf("Parsed Namespace: %s, Pod Name: %s, isClient: %t", podNamespace, podName, isClient)
 
 	// Load the CNI config
 	conf, err := loadConf(args.StdinData)
@@ -290,24 +294,32 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomPortNum := rng.Intn(255) + 1
+	eport := 0
+	if !isClient {
+		// Generate a random egress port number for the server
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		eport = rng.Intn(255) + 1
+	}
 
-	if err := addPortToBMv2Switch(hostInterface.Name, conf.ThriftPort, randomPortNum); err != nil {
+	if err := addPortToBMv2Switch(hostInterface.Name, conf.ThriftPort, eport); err != nil {
 		logger.Printf("Error connecting veth to BMv2 switch: %v", err)
 		return err
 	}
-	logger.Printf("Veth %s connected to BMv2 switch on port %d", hostInterface.Name, randomPortNum)
+	logger.Printf("Veth %s connected to BMv2 switch on port %d", hostInterface.Name, eport)
 
-	// Send the node information to the controller
-	ipv4 := ipConfig.Address.IP.String()
-	dmac := containerInterface.HardwareAddr.String()
-	smac := hostInterface.HardwareAddr.String()
+	// Only send node information to the controller if the node is a client or server
+	// Otherwise the switch will load-balance traffic to kubernetes system nodes like CoreDNS, etc.
+	if isClient || isServer {
+		// Send the node information to the controller
+		ipv4 := ipConfig.Address.IP.String()
+		dmac := containerInterface.HardwareAddr.String()
+		smac := hostInterface.HardwareAddr.String()
 
-	err = addNodeToController(conf.ControllerAddr, ipv4, smac, dmac, randomPortNum)
-	if err != nil {
-		logger.Printf("Error adding node to controller: %v", err)
-		return err
+		err = addNodeToController(conf.ControllerAddr, ipv4, smac, dmac, eport, isClient)
+		if err != nil {
+			logger.Printf("Error adding node to controller: %v", err)
+			return err
+		}
 	}
 
 	// Add IPs to the result

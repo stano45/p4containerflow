@@ -123,23 +123,25 @@ def add_node():
     ipv4 = data.get("ipv4")
     dest_mac = data.get("dmac")
     src_mac = data.get("smac")
+    isClient = data.get("isClient")
 
     try:
         egress_port = int(data.get("eport"))
     except ValueError:
         return jsonify({"error": "Invalid eport parameter"}), 400
 
-    if not all([ipv4, src_mac, dest_mac, egress_port]):
+    if ipv4 is None or dest_mac is None or src_mac is None or isClient is None:
         return jsonify({"error": "Missing parameters"}), 400
 
     try:
-        nodeManager.addNode(ipv4, src_mac, dest_mac, egress_port)
+        nodeManager.addNode(ipv4, src_mac, dest_mac, egress_port, isClient)
         return jsonify({"status": "success"}), 200
     except grpc.RpcError as e:
         printGrpcError(e)
         return jsonify({"error": str(e)}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 if __name__ == "__main__":

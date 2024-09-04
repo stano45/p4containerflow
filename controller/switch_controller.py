@@ -67,7 +67,7 @@ class SwitchController(object):
     def __del__(self):
         ShutdownAllSwitchConnections()
 
-    def insertEcmpGroupEntry(
+    def insertEcmpGroupSelectEntry(
         self, matchDstAddr, ecmp_base, ecmp_count, update_type="INSERT"
     ):
         table_entry = self.p4info_helper.buildTableEntry(
@@ -81,6 +81,21 @@ class SwitchController(object):
             f"Updated the 'ecmp_group' table on "
             f"{self.sw.name=} with {matchDstAddr=}, {ecmp_base=}, {ecmp_count=}"
         )
+
+    def insertEcmpGroupRewriteSrcEntry(
+        self, matchDstAddr, new_src, update_type="INSERT"
+    ):
+        table_entry = self.p4info_helper.buildTableEntry(
+            table_name="MyIngress.ecmp_group",
+            match_fields={"hdr.ipv4.dstAddr": matchDstAddr},
+            action_name="MyIngress.set_rewrite_src",
+            action_params={"new_src": new_src},
+        )
+        self.sw.WriteTableEntry(table_entry, update_type=update_type)
+        print(
+            f"Updated the 'ecmp_group' table on "
+            f"{self.sw.name=} with {matchDstAddr=}, {new_src=}"
+        )      
 
     def insertEcmpNhopEntry(
         self, ecmp_select, dmac, ipv4, port, update_type="INSERT"
@@ -108,14 +123,14 @@ class SwitchController(object):
             f"{self.sw.name=} with {ecmp_select=}"
         )
 
-    def insertSendFrameEntry(self, egress_port, smac):
+    def insertSendFrameEntry(self, egress_port, smac, update_type="INSERT"):
         table_entry = self.p4info_helper.buildTableEntry(
             table_name="MyEgress.send_frame",
             match_fields={"standard_metadata.egress_port": egress_port},
             action_name="MyEgress.rewrite_mac",
             action_params={"smac": smac},
         )
-        self.sw.WriteTableEntry(table_entry)
+        self.sw.WriteTableEntry(table_entry, update_type)
         print(
             f"Updated the 'send_frame' table on "
             f"{self.sw.name=} with {egress_port=}, {smac=}"

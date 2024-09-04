@@ -30,6 +30,6 @@ spec:
           env:
             # P4 load balancer IP
             - name: SERVER_IP
-              value: "10.0.1.10"
+              value: "10.244.1.244"
             - name: SERVER_PORT
               value: "12345"
