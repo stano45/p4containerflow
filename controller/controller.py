@@ -50,8 +50,6 @@ def main(config_file_path):
                 "No master switch specified in the configuration file."
             )
         lb_nodes = master_config.get("lb_nodes", None)
-        if not lb_nodes:
-            raise Exception("No load balancer IP addresses specified.")
 
         master_controller = SwitchController(
             p4info_file_path=master_config["p4info_file_path"],
@@ -116,6 +114,34 @@ def update_node():
         return jsonify({"error": str(e)}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/add_node", methods=["POST"])
+def add_node():
+    data = request.get_json()
+
+    ipv4 = data.get("ipv4")
+    dest_mac = data.get("dmac")
+    src_mac = data.get("smac")
+    isClient = data.get("isClient")
+
+    try:
+        egress_port = int(data.get("eport"))
+    except ValueError:
+        return jsonify({"error": "Invalid eport parameter"}), 400
+
+    if ipv4 is None or dest_mac is None or src_mac is None or isClient is None:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    try:
+        nodeManager.addNode(ipv4, src_mac, dest_mac, egress_port, isClient)
+        return jsonify({"status": "success"}), 200
+    except grpc.RpcError as e:
+        printGrpcError(e)
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 if __name__ == "__main__":
