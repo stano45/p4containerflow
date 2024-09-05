@@ -1,31 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: http-server
+  name: http-client
   labels:
-    app: http-server
+    app: http-client
   annotations:
-    bmv2-cni/role: "server"
+    bmv2-cni/role: "client"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: http-server
+      app: http-client
   template:
     metadata:
       labels:
-        app: http-server
+        app: http-client
     spec:
       containers:
-        - name: http-server
-          image: docker.io/skosorin/http-server
+        - name: http-client
+          image: docker.io/skosorin/http-client
           imagePullPolicy: Always
           securityContext:
             capabilities:
               add:
               - NET_ADMIN
-          ports:
-            - containerPort: 12345
           resources:
             requests:
               memory: "256Mi"
@@ -33,3 +31,9 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "500m"
+          env:
+            # P4 load balancer IP
+            - name: SERVER_IP
+              value: "10.244.1.244"
+            - name: SERVER_PORT
+              value: "12345"
