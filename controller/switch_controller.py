@@ -27,9 +27,7 @@ class SwitchController(object):
         self.proto_dump_file = proto_dump_file
         self.initial_table_rules_file = initial_table_rules_file
 
-        self.p4info_helper = p4runtime_lib.helper.P4InfoHelper(
-            p4info_file_path
-        )
+        self.p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
         self.sw = p4runtime_lib.bmv2.Bmv2SwitchConnection(
             name=sw_name,
             address=sw_addr,
@@ -95,7 +93,7 @@ class SwitchController(object):
         print(
             f"Updated the 'ecmp_group' table on "
             f"{self.sw.name=} with {matchDstAddr=}, {new_src=}"
-        )      
+        )
 
     def insertEcmpNhopEntry(
         self, ecmp_select, dmac, ipv4, port, update_type="INSERT"

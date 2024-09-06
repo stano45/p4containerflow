@@ -95,9 +95,7 @@ class SwitchConnection(object):
         else:
             self.client_stub.SetForwardingPipelineConfig(request)
 
-    def WriteTableEntry(
-        self, table_entry, update_type="INSERT", dry_run=False
-    ):
+    def WriteTableEntry(self, table_entry, update_type="INSERT", dry_run=False):
         request = p4runtime_pb2.WriteRequest()
         request.device_id = self.device_id
         request.election_id.low = 1
@@ -183,9 +181,7 @@ class GrpcRequestLogger(
                 )
             f.write("---\n")
 
-    def intercept_unary_unary(
-        self, continuation, client_call_details, request
-    ):
+    def intercept_unary_unary(self, continuation, client_call_details, request):
         self.log_message(client_call_details.method, request)
         return continuation(client_call_details, request)
 

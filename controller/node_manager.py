@@ -3,6 +3,7 @@ from switch_controller import SwitchController
 # TODO: pass this in a config file
 LB_IP = "10.244.1.244"
 
+
 class NodeManager(object):
     def __init__(self, switch_controller: SwitchController, lb_nodes):
         self.switch_controller = switch_controller
@@ -69,9 +70,9 @@ class NodeManager(object):
         )
 
         self.switch_controller.insertSendFrameEntry(egress_port=port, smac=smac)
-    
+
     def _addClientNode(self, ip, smac, dmac, port):
-        # TODO: 
+        # TODO:
         # if self.client is not None:
         #     raise Exception("Client node already exists")
 
@@ -89,15 +90,19 @@ class NodeManager(object):
             update_type="INSERT",
         )
 
-        self.switch_controller.insertSendFrameEntry(egress_port=port, smac=smac, update_type="INSERT")
+        self.switch_controller.insertSendFrameEntry(
+            egress_port=port, smac=smac, update_type="INSERT"
+        )
 
         self.client = (ip, smac, dmac, port)
 
     def addNode(self, ip, smac, dmac, port, isClient):
         if ip in self.node_map:
             raise Exception(f"Node with IP {ip} already exists")
-        
-        addNodeHandlerFn = self._addClientNode if isClient else self._addServerNode
+
+        addNodeHandlerFn = (
+            self._addClientNode if isClient else self._addServerNode
+        )
         addNodeHandlerFn(ip, smac, dmac, port)
 
         self.switch_controller.readTableRules()
