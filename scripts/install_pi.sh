@@ -24,7 +24,7 @@ sudo apt-get install -y \
 
 pip3 install protobuf==3.20.0
 
-git clone --depth 1 --branch main https://github.com/p4lang/PI.git
+git clone https://github.com/p4lang/PI.git
 cd PI
 git checkout 05cb92564af77ae4826565cbde84e3fd4960c6bd
 git submodule update --init --recursive
