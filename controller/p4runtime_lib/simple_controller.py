@@ -259,9 +259,7 @@ def _byteify(data, ignore_dicts=False):
     # but only if we haven't already byteified it
     if isinstance(data, dict) and not ignore_dicts:
         return {
-            _byteify(key, ignore_dicts=True): _byteify(
-                value, ignore_dicts=True
-            )
+            _byteify(key, ignore_dicts=True): _byteify(value, ignore_dicts=True)
             for key, value in data.items()
         }
     # if it's anything else, return it in its original form

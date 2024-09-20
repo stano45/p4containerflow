@@ -189,9 +189,7 @@ class P4InfoHelper(object):
         if match_fields:
             table_entry.match.extend(
                 [
-                    self.get_match_field_pb(
-                        table_name, match_field_name, value
-                    )
+                    self.get_match_field_pb(table_name, match_field_name, value)
                     for match_field_name, value in match_fields.items()
                 ]
             )
@@ -205,9 +203,7 @@ class P4InfoHelper(object):
             if action_params:
                 action.params.extend(
                     [
-                        self.get_action_param_pb(
-                            action_name, field_name, value
-                        )
+                        self.get_action_param_pb(action_name, field_name, value)
                         for field_name, value in action_params.items()
                     ]
                 )

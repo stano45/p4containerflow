@@ -47,11 +47,9 @@ def main(config_file_path):
 
         if master_config is None:
             raise Exception(
-                "No master switch specified in the configuration file."
+                "No master switch specified" "in the configuration file."
             )
         lb_nodes = master_config.get("lb_nodes", None)
-        if not lb_nodes:
-            raise Exception("No load balancer IP addresses specified.")
 
         master_controller = SwitchController(
             p4info_file_path=master_config["p4info_file_path"],
