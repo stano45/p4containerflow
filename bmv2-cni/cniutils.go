@@ -9,16 +9,18 @@ import (
 )
 
 func parseNetConf(bytes []byte) (*BMv2NetConf, error) {
+	log.Infof("Parsing network configuration")
 	n := &BMv2NetConf{}
 	if err := json.Unmarshal(bytes, n); err != nil {
-		log.Errorf("Error loading config: %v", err)
+		log.Errorf("Error loading network config: %v", err)
 		return nil, err
 	}
-	log.Errorf("Config loaded successfully")
+	log.Infof("Network config loaded successfully: %+v", n)
 	return n, nil
 }
 
 func parseArgs(cniArgs string) (string, string, error) {
+	log.Infof("Parsing CNI arguments: %s", cniArgs)
 	var podNamespace, podName string
 
 	// Split the string by semicolon to get the individual key-value pairs
@@ -26,6 +28,7 @@ func parseArgs(cniArgs string) (string, string, error) {
 	for _, arg := range argsArray {
 		kv := strings.Split(arg, "=")
 		if len(kv) != 2 {
+			log.Warningf("Invalid CNI argument, skipping: %s", arg)
 			continue // Invalid pair, skip
 		}
 
@@ -36,30 +39,47 @@ func parseArgs(cniArgs string) (string, string, error) {
 		switch key {
 		case "K8S_POD_NAMESPACE":
 			podNamespace = value
+			log.Infof("Found K8S_POD_NAMESPACE: %s", podNamespace)
 		case "K8S_POD_NAME":
 			podName = value
+			log.Infof("Found K8S_POD_NAME: %s", podName)
+		default:
+			log.Infof("Ignoring irrelevant CNI argument: %s", key)
 		}
 	}
 
 	// Check if both values are extracted successfully
 	if podNamespace == "" || podName == "" {
+		log.Errorf("Failed to extract pod namespace or pod name from CNI_ARGS")
 		return "", "", fmt.Errorf("failed to extract pod namespace or pod name from CNI_ARGS")
 	}
 
+	log.Infof("Successfully parsed CNI arguments: Namespace=%s, PodName=%s", podNamespace, podName)
 	return podNamespace, podName, nil
 }
 
 // TODO: configure this via annotations in pod manifest
 func isClientOrServer(podName string) (bool, bool) {
+	log.Infof("Determining if pod %s is a client or server", podName)
 	isClient, isServer := false, false
 	if strings.Contains(podName, "client") {
 		isClient = true
+		log.Infof("Pod %s identified as client", podName)
 	}
 	if strings.Contains(podName, "server") {
 		isServer = true
+		log.Infof("Pod %s identified as server", podName)
+	}
+	if !isClient && !isServer {
+		log.Warningf("Pod %s is neither client nor server", podName)
 	}
 	return isClient, isServer
 }
+
+// The following functions are placeholders for future implementation
+// func getKubeClient() (*kubernetes.Clientset, error) { /* ... */ }
+// func getPodAnnotations(namespace, podName string) (map[string]string, error) { /* ... */ }
+// func getCustomCNIArg(namespace, podName string) (string, error) { /* ... */ }
 
 // func getKubeClient() (*kubernetes.Clientset, error) {
 // 	kubeconfig := os.Getenv("KUBECONFIG")
