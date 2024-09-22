@@ -1,4 +1,4 @@
-FROM docker.io/library/python:3.11-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 # Copy the application code
 COPY main.py /app/
 
-# Expose the application port
-EXPOSE 12345
+# Install Python dependencies
+RUN pip install requests
 
 CMD ["python3", "main.py"]

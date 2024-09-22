@@ -1,0 +1,24 @@
+{
+  "target": "bmv2",
+  "p4info": "build/load_balance.p4.p4info.txt",
+  "bmv2_json": "build/load_balance.json",
+  "table_entries": [
+    {
+      "table": "MyIngress.ecmp_group",
+      "default_action": true,
+      "action_name": "MyIngress.drop",
+      "action_params": {}
+    },
+    {
+      "table": "MyIngress.ecmp_group",
+      "match": {
+        "hdr.ipv4.dstAddr": ["10.244.1.244", 32]
+      },
+      "action_name": "MyIngress.set_ecmp_select",
+      "action_params": {
+        "ecmp_base": 0,
+        "ecmp_count": 0
+      }
+    }
+  ]
+}
