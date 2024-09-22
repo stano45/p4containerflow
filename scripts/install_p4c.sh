@@ -27,7 +27,7 @@ git clone --depth 1 --branch v1.2.4.14 https://github.com/p4lang/p4c.git
 cd p4c
 git submodule update --init --recursive
 
-pip3 install --user -r requirements.txt
+pip3 install -r requirements.txt
 mkdir -p build
 cd build
 cmake .. -DENABLE_TEST_TOOLS=ON
