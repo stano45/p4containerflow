@@ -19,7 +19,7 @@ spec:
       containers:
         - name: http-client
           image: docker.io/skosorin/http-client
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
               add:

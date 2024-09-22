@@ -49,7 +49,7 @@ spec:
               cpu: "500m"
         - name: bmv2-controller
           image: docker.io/skosorin/bmv2-controller
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           args:
             - "--config"
             - "/config/switches.json"
@@ -85,4 +85,4 @@ spec:
           emptyDir: {}
         - name: config-volume
           hostPath:
-            path: /home/stanley/gsoc/p4containerflow/examples/container_migration_in_kubernetes/config
+            path: /home/stan/p4containerflow/examples/container_migration_in_kubernetes/config

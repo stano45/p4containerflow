@@ -19,7 +19,7 @@ spec:
       containers:
         - name: http-server
           image: docker.io/skosorin/http-server
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           securityContext:
             capabilities:
               add:
