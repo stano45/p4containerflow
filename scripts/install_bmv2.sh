@@ -13,6 +13,7 @@ chmod +x install-nanomsg.sh
 chmod +x install-thrift.sh
 ./install-nanomsg.sh
 ./install-thrift.sh
+python3 -m pip install thrift==0.21.0
 cd ..
 ./autogen.sh
 ./configure
