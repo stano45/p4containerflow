@@ -25,7 +25,7 @@ spec:
           args:
             - "--device-id"
             - "0"
-            - "/load_balance.json"
+            - "/config/load_balance.json"
             - "--log-console"
             - "--thrift-port"
             - "9090"
@@ -35,9 +35,8 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
-            - name: load-balance-json
-              mountPath: /load_balance.json
-              subPath: load_balance.json
+            - name: bmv2-switch-volume
+              mountPath: /config
             - name: pcap-dir
               mountPath: /pcaps
           resources:
@@ -54,7 +53,7 @@ spec:
             - "--config"
             - "/config/switches.json"
           volumeMounts:
-            - name: config-volume
+            - name: bmv2-controller-volume
               mountPath: /config
           resources:
             requests:
@@ -78,11 +77,11 @@ spec:
         - name: plugin-conf
           configMap:
             name: bmv2-cni-config
-        - name: load-balance-json
+        - name: bmv2-switch-volume
           hostPath:
-            path: /etc/load_balancer/
+            path: /etc/p4containerflow/bmv2-switch
+        - name: bmv2-controller-volume
+          hostPath:
+            path: /etc/p4containerflow/bmv2-controller
         - name: pcap-dir
           emptyDir: {}
-        - name: config-volume
-          hostPath:
-            path: /home/stan/p4containerflow/examples/container_migration_in_kubernetes/config
