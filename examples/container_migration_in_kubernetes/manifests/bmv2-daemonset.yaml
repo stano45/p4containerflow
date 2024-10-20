@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: bmv2-cni-daemonset
+  namespace: kube-system
+  labels:
+    k8s-app: bmv2-cni
+spec:
+  selector:
+    matchLabels:
+      name: bmv2-cni
+  template:
+    metadata:
+      labels:
+        name: bmv2-cni
+    spec:
+      hostNetwork: true
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          effect: "NoSchedule"
+      containers:
+        - name: bmv2-switch
+          image: docker.io/skosorin/bmv2
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--device-id"
+            - "0"
+            - "/config/load_balance.json"
+            - "--log-console"
+            - "--thrift-port"
+            - "9090"
+            - "--"
+            - "--grpc-server-addr"
+            - "0.0.0.0:50051"
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: bmv2-switch-volume
+              mountPath: /config
+            - name: pcap-dir
+              mountPath: /pcaps
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+        - name: bmv2-controller
+          image: docker.io/skosorin/bmv2-controller
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--config"
+            - "/config/switches.json"
+          volumeMounts:
+            - name: bmv2-controller-volume
+              mountPath: /config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext:
+            privileged: true
+      volumes:
+        - name: cni-bin
+          hostPath:
+            path: /opt/cni/bin
+        - name: cni-conf
+          hostPath:
+            path: /etc/cni/net.d
+        - name: plugin-bin
+          hostPath:
+            path: /opt/cni/bin
+        - name: plugin-conf
+          configMap:
+            name: bmv2-cni-config
+        - name: bmv2-switch-volume
+          hostPath:
+            path: /etc/p4containerflow/bmv2-switch
+        - name: bmv2-controller-volume
+          hostPath:
+            path: /etc/p4containerflow/bmv2-controller
+        - name: pcap-dir
+          emptyDir: {}

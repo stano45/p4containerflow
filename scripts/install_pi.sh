@@ -4,8 +4,6 @@
 # Print script commands and exit on errors.
 set -xe
 
-# If you want to use a specific venv,
-# change this variable to its absolute path
 PYTHON_VENV="$VIRTUAL_ENV"
 source "${PYTHON_VENV}/bin/activate"
 
